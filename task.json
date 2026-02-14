@@ -104,7 +104,7 @@
         "支持多个搜索关键词",
         "将搜索结果标准化并存入 raw_items 表"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 9,

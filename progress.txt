@@ -4,6 +4,26 @@
 
 ---
 
+## 2026-02-14 - Task 8: AI 搜索采集器 ✓
+
+### What was done:
+- 创建 app/collectors/search_collector.py
+- 实现 Tavily API 调用
+- 支持 6 个默认搜索关键词 (AI news, Web3 news, VC funding 等)
+- 实现多关键词并发搜索 (search_multiple)
+
+### Testing:
+- 模块导入成功
+- 结构验证通过
+- 注意: 需要配置 TAVILY_API_KEY 才能使用
+
+### Notes:
+- 使用 settings.tavily_api_key 读取 API 密钥
+- 支持自定义搜索关键词
+- 返回结果包含 title, url, content
+
+---
+
 ## 2026-02-14 - Task 7: Twitter 采集器 ✓
 
 ### What was done:
