@@ -4,6 +4,31 @@
 
 ---
 
+## 2026-02-14 - Task 10-13: AI 处理模块 ✓
+
+### What was done:
+- 创建 app/processors/filter.py - AI 初筛模块
+- 创建 app/processors/summarizer.py - 摘要生成模块
+- 创建 app/processors/classifier.py - 关键词提取和分类模块
+- 创建 app/processors/scorer.py - 打分模块
+
+### Features:
+- AIFilter: 调用 LLM 判断新闻相关性，支持并发处理
+- Summarizer: 生成 100 字以内的摘要
+- Classifier: 提取 3-5 个关键词，自动分类 (AI/投资/Web3/混合)
+- Scorer: 0-100 分打分，支持按分数排序
+
+### Testing:
+- 所有模块导入成功
+- 结构验证通过
+
+### Notes:
+- 所有模块支持并发控制 (默认 5 个并发)
+- 处理失败时有默认值保护
+- 分类基于关键词匹配和 LLM 提取
+
+---
+
 ## 2026-02-14 - Task 9: 去重模块 ✓
 
 ### What was done:

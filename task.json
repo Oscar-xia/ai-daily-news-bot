@@ -128,7 +128,7 @@
         "剔除无关内容 (更新 status=discarded)",
         "记录筛选结果"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 11,
@@ -140,7 +140,7 @@
         "将摘要存入 processed_items 表",
         "控制摘要长度 (100字以内)"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 12,
@@ -152,7 +152,7 @@
         "自动分类 (AI/投资/Web3)",
         "将关键词存入 processed_items 表"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 13,
@@ -164,7 +164,7 @@
         "将分数存入 processed_items 表",
         "支持按分数排序"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 14,
