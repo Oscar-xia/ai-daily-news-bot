@@ -40,7 +40,7 @@
         "插入默认 RSS 信息源配置",
         "测试数据库连接和基本 CRUD 操作"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 4,

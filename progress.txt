@@ -4,6 +4,26 @@
 
 ---
 
+## 2026-02-14 - Task 3: 数据库初始化 ✓
+
+### What was done:
+- 创建 scripts/init_db.py 数据库初始化脚本
+- 创建所有数据表 (sources, raw_items, processed_items, reports, report_items)
+- 插入 12 个默认 RSS 信息源配置 (AI 官方博客、社区、投资媒体、Web3 媒体)
+- 测试数据库连接和基本 CRUD 操作
+
+### Testing:
+- python scripts/init_db.py 执行成功
+- 验证数据库包含 12 条 Source 记录
+- 所有表结构正确创建
+
+### Notes:
+- 需要安装 greenlet 库支持 SQLAlchemy 异步操作
+- 已更新 requirements.txt 添加 greenlet 依赖
+- 数据库文件: data/news.db (SQLite)
+
+---
+
 ## 2026-02-14 - Task 2: 数据模型定义 ✓
 
 ### What was done:
