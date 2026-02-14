@@ -4,6 +4,26 @@
 
 ---
 
+## 2026-02-14 - Task 5: Prompt 模板 ✓
+
+### What was done:
+- 创建 app/llm/prompts.py
+- 实现 5 个 System Prompt 模板 (初筛、摘要、关键词、打分、早报生成)
+- 实现 5 个 Prompt 生成函数 (get_filter_prompt, get_summary_prompt, get_keywords_prompt, get_score_prompt, get_report_prompt)
+- 实现去重 Prompt (get_dedup_prompt)
+- 实现 3 个响应解析函数 (parse_keywords_response, parse_score_response, parse_filter_response)
+
+### Testing:
+- 所有 Prompt 函数导入成功
+- 解析函数测试通过
+
+### Notes:
+- 所有 Prompt 使用中文
+- 早报生成支持按分类组织内容
+- 解析函数具有容错能力，可处理多种响应格式
+
+---
+
 ## 2026-02-14 - Task 4: LLM 基础封装 ✓
 
 ### What was done:
