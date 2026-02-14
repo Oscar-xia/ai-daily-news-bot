@@ -4,6 +4,26 @@
 
 ---
 
+## 2026-02-14 - Task 6: RSS 采集器 ✓
+
+### What was done:
+- 创建 app/collectors/base.py 采集器基类 (CollectedItem, BaseCollector)
+- 创建 app/collectors/rss_collector.py RSS 采集器
+- 使用 feedparser 解析 RSS
+- 实现错误处理和超时控制 (30秒)
+- 支持 collect_many() 并发采集
+
+### Testing:
+- 测试 Hacker News RSS 源，成功采集 20 条信息
+- 标题、URL、内容、作者、发布时间解析正确
+
+### Notes:
+- 使用 httpx 异步获取 RSS 内容
+- 支持 RSS 2.0 和 Atom 格式
+- 支持从 source.config 中读取分类信息
+
+---
+
 ## 2026-02-14 - Task 5: Prompt 模板 ✓
 
 ### What was done:

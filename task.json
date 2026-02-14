@@ -79,7 +79,7 @@
         "实现错误处理和超时控制",
         "将采集结果存入 raw_items 表"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 7,
