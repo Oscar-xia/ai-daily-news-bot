@@ -4,6 +4,28 @@
 
 ---
 
+## 2026-02-14 - Task 16-18: 脚本 ✓
+
+### What was done:
+- 创建 scripts/run_collector.py - 采集脚本
+- 创建 scripts/run_processor.py - AI 处理脚本
+- 创建 scripts/run_generator.py - 早报生成脚本
+
+### Features:
+- run_collector.py: 支持 --type (rss/twitter/search/all) 和 --source-id 参数
+- run_processor.py: 支持 --ids, --min-score, --limit 参数
+- run_generator.py: 支持 --date, --min-score, --output 参数
+
+### Testing:
+- run_collector.py --type rss --source-id 5 测试通过
+- 成功采集 20 条信息并存入数据库
+
+### Notes:
+- 所有脚本支持命令行参数
+- 输出详细的进度和统计信息
+
+---
+
 ## 2026-02-14 - Task 14-15: 历史去重 + 早报生成器 ✓
 
 ### What was done:

@@ -200,7 +200,7 @@
         "支持指定信息源 ID",
         "输出采集统计信息"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 17,
@@ -212,7 +212,7 @@
         "依次执行: 去重 → 初筛 → 摘要 → 关键词 → 打分",
         "输出处理统计信息"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 18,
@@ -224,7 +224,7 @@
         "支持指定最低分数阈值",
         "生成 Markdown 文件到 output/reports/"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 19,
