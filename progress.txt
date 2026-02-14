@@ -4,6 +4,28 @@
 
 ---
 
+## 2026-02-14 - Task 14-15: 历史去重 + 早报生成器 ✓
+
+### What was done:
+- 任务 14: 历史去重已在 deduplicator.py 中通过 add_existing_items() 实现
+- 创建 app/generators/report_generator.py - 早报生成器
+
+### Features:
+- ReportGenerator: 使用 LLM 生成 Markdown 早报
+- 支持按分类组织内容 (AI技术/投资/Web3)
+- 提供 fallback 模式 (无需 LLM 也能生成报告)
+- 支持空报告生成
+
+### Testing:
+- 备用报告生成测试通过
+- Markdown 格式正确，包含目录和分类
+
+### Notes:
+- 早报按分数排序
+- 每条新闻包含标题、摘要、来源链接
+
+---
+
 ## 2026-02-14 - Task 10-13: AI 处理模块 ✓
 
 ### What was done:

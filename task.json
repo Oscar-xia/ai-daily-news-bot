@@ -175,7 +175,7 @@
         "与 72 小时内已发布内容比对",
         "排除已报道过的新闻"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 15,
@@ -188,7 +188,7 @@
         "生成 Markdown 格式输出",
         "保存到 reports 表和 output/ 目录"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 16,
