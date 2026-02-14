@@ -4,6 +4,28 @@
 
 ---
 
+## 2026-02-14 - Task 4: LLM 基础封装 ✓
+
+### What was done:
+- 创建 app/llm/base.py LLM 基础模块
+- 定义 BaseLLM 抽象基类
+- 实现 OpenAILLM 类 (支持 OpenAI 兼容接口)
+- 实现 ZhipuLLM 类 (智谱 AI)
+- 实现错误处理和重试逻辑 (chat_with_retry)
+- 实现 get_llm() 工厂函数，根据配置返回对应 LLM 实例
+- 提供 chat() 和 simple_chat() 便捷函数
+
+### Testing:
+- 所有类和函数导入成功
+- 模块结构验证通过
+
+### Notes:
+- 支持 3 种 LLM 提供商: OpenAI, 智谱, 通义千问
+- 通义千问使用 OpenAI 兼容接口
+- 重试逻辑: 最多 3 次，指数退避
+
+---
+
 ## 2026-02-14 - Task 3: 数据库初始化 ✓
 
 ### What was done:
