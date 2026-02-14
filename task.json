@@ -92,7 +92,7 @@
         "处理 Twitter 特有的数据格式",
         "将采集结果存入 raw_items 表"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 8,

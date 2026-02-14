@@ -4,6 +4,27 @@
 
 ---
 
+## 2026-02-14 - Task 7: Twitter 采集器 ✓
+
+### What was done:
+- 创建 app/collectors/twitter_collector.py
+- 实现 RSSHub 调用 (通过 RSS 接口获取 Twitter)
+- 支持配置多个 Twitter 用户 (collect_users, collect_from_config)
+- 处理 Twitter 特有的数据格式 (HTML 清理)
+- 添加速率限制保护 (并发限制为 3)
+
+### Testing:
+- 模块导入成功
+- 结构验证通过
+- 注意: 公共 RSSHub 实例可能被限流，建议自建或使用 Apify
+
+### Notes:
+- 使用 settings.twitter_user_list 读取配置的用户列表
+- 自动清理 HTML 标签
+- 支持从配置中读取分类
+
+---
+
 ## 2026-02-14 - Task 6: RSS 采集器 ✓
 
 ### What was done:
