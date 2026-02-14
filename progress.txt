@@ -4,6 +4,26 @@
 
 ---
 
+## 2026-02-14 - Task 9: 去重模块 ✓
+
+### What was done:
+- 创建 app/processors/deduplicator.py
+- 实现 URL 去重 (URL 标准化 + MD5 哈希)
+- 实现标题相似度去重 (SequenceMatcher, 阈值 0.85)
+- 实现 DeduplicationResult 数据类
+- 支持 add_existing_items() 加载已有数据
+
+### Testing:
+- 测试 5 条数据，正确识别 2 条唯一、3 条重复
+- URL 去重和标题去重都正常工作
+
+### Notes:
+- URL 标准化: 移除协议、www、跟踪参数、尾部斜杠
+- 标题标准化: 小写、移除常见前缀 (Breaking, Just In)
+- 相似度阈值可配置
+
+---
+
 ## 2026-02-14 - Task 8: AI 搜索采集器 ✓
 
 ### What was done:

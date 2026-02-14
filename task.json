@@ -116,7 +116,7 @@
         "实现标题相似度去重 (可选: 使用 embedding)",
         "标记重复项 is_duplicate=True"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 10,
