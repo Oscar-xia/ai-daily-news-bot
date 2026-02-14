@@ -4,6 +4,28 @@
 
 ---
 
+## 2026-02-14 - Task 2: 数据模型定义 ✓
+
+### What was done:
+- 创建 app/models/schemas.py
+- 定义 Source 模型 (信息源配置，支持 rss/twitter/search)
+- 定义 RawItem 模型 (原始信息，包含 source_id, title, content, url, status 等)
+- 定义 ProcessedItem 模型 (处理后信息，包含 summary, keywords, score, approved 等)
+- 定义 Report 模型 (早报，包含 report_date, content, status)
+- 定义 ReportItem 模型 (早报与处理后信息的关联表)
+- 创建 Pydantic Schema 用于 API 请求/响应
+
+### Testing:
+- 所有 SQLAlchemy 模型导入成功
+- 所有 Pydantic Schema 导入成功
+
+### Notes:
+- 使用 SQLAlchemy 2.0 的 Mapped 类型注解
+- 使用 CheckConstraint 约束枚举字段
+- Pydantic 使用 ConfigDict(from_attributes=True) 替代旧版 Config
+
+---
+
 ## 2026-02-14 - Task 1: 项目基础配置 ✓
 
 ### What was done:

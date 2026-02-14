@@ -28,7 +28,7 @@
         "定义 ReportItem 模型 (早报内容关联)",
         "创建 Pydantic Schema 用于 API 响应"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 3,
