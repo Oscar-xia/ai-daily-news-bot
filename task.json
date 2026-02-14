@@ -237,7 +237,7 @@
         "每天 6:00 生成早报",
         "添加错误处理和告警"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 20,
@@ -249,7 +249,7 @@
         "添加健康检查端点 /health",
         "集成调度器 (可选)"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 21,

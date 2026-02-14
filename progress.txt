@@ -4,6 +4,28 @@
 
 ---
 
+## 2026-02-14 - Task 19-20: 调度器 + FastAPI ✓
+
+### What was done:
+- 创建 app/scheduler.py - 定时调度器
+- 创建 app/main.py - FastAPI 主入口
+
+### Features:
+- SchedulerManager: 使用 APScheduler 管理定时任务
+- 定时采集: 每 N 小时 (可配置)
+- 定时报表: 每天 6:00 (可配置)
+- FastAPI: 健康检查、调度器状态、手动触发端点
+
+### Testing:
+- FastAPI 应用导入成功
+- 端点验证通过: /health, /api/scheduler/status
+
+### Notes:
+- 调度器可通过 SCHEDULER_ENABLED 环境变量控制开关
+- 支持 lifespan 管理调度器生命周期
+
+---
+
 ## 2026-02-14 - Task 16-18: 脚本 ✓
 
 ### What was done:
