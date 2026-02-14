@@ -100,6 +100,5 @@ async def trigger_job(job_id: str):
 
 
 # Import and include API routes
-# (These will be implemented in task 21-24)
-# from app.api.routes import router
-# app.include_router(router, prefix="/api")
+from app.api.routes import router as api_router
+app.include_router(api_router, prefix="/api")

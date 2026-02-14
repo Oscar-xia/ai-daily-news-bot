@@ -4,6 +4,24 @@
 
 ---
 
+## 2026-02-14 - Task 21-24: API 路由 ✓
+
+### What was done:
+- 创建 app/api/routes.py - API 路由
+- 更新 app/main.py - 包含 API 路由
+
+### API 端点:
+- GET/POST /api/sources - 信息源管理
+- GET/POST /api/items - 原始信息管理
+- GET/POST /api/processed - 处理后信息
+- GET/POST /api/reports - 早报管理
+
+### Testing:
+- API 路由导入成功
+- 15 个端点验证通过
+
+---
+
 ## 2026-02-14 - Task 19-20: 调度器 + FastAPI ✓
 
 ### What was done:
