@@ -1,124 +1,144 @@
 #!/usr/bin/env python3
 """
-Run collectors script.
-Manually trigger information collection from various sources.
+RSS Collector Script.
+Version 2.0 - 简化版，10路并发
 """
 
 import asyncio
 import sys
 from pathlib import Path
-from datetime import datetime
-from typing import Optional
+from datetime import datetime, timedelta
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+import httpx
+import feedparser
 from sqlalchemy import select
+
 from app.database import async_session
 from app.models.schemas import Source, RawItem
-from app.collectors.rss_collector import RSSCollector
-from app.collectors.twitter_collector import TwitterCollector
-from app.collectors.search_collector import SearchCollector
+from app.collectors.base import CollectedItem
 from app.processors.deduplicator import Deduplicator
+from app.config import settings
 
 
-async def collect_from_source(
-    source: Source,
-    collector,
-    deduplicator: Deduplicator
-) -> tuple:
-    """Collect from a single source.
+# 常量
+FEED_FETCH_TIMEOUT_MS = 15_000
+FEED_CONCURRENCY = 10
 
-    Returns:
-        Tuple of (collected_count, duplicate_count, error)
-    """
+
+async def fetch_feed(source: Source) -> list[CollectedItem]:
+    """Fetch and parse a single RSS feed."""
+    items = []
+
     try:
-        source_config = {
-            "name": source.name,
-            "url": source.url,
-            "config": source.config,
-        }
+        async with httpx.AsyncClient(timeout=FEED_FETCH_TIMEOUT_MS / 1000) as client:
+            response = await client.get(
+                source.url,
+                follow_redirects=True,
+                headers={
+                    'User-Agent': 'AI-Daily-Digest/2.0 (RSS Reader)',
+                    'Accept': 'application/rss+xml, application/atom+xml, application/xml, text/xml, */*',
+                }
+            )
+            response.raise_for_status()
 
-        items = await collector.collect(source_config)
+        feed = feedparser.parse(response.content)
 
-        # Check for duplicates against existing items
-        unique_items, duplicates = deduplicator.deduplicate(items)
-
-        # Store unique items
-        stored_count = 0
-        async with async_session() as session:
-            for item in unique_items:
-                # Check if URL already exists
-                if item.url:
-                    existing = await session.execute(
-                        select(RawItem).where(RawItem.url == item.url)
-                    )
-                    if existing.scalars().first():
-                        continue
-
-                raw_item = RawItem(
-                    source_id=source.id,
-                    title=item.title,
-                    content=item.content,
-                    url=item.url,
-                    author=item.author,
-                    published_at=item.published_at,
-                    category=item.category,
-                    status="pending",
-                )
-                session.add(raw_item)
-                stored_count += 1
-
-            # Update source last_fetched_at
-            source.last_fetched_at = datetime.utcnow()
-            session.add(source)
-
-            await session.commit()
-
-        return len(items), len(duplicates) + (len(items) - len(unique_items) - stored_count), None
+        for entry in feed.entries:
+            item = parse_entry(entry, source.name)
+            if item:
+                items.append(item)
 
     except Exception as e:
-        return 0, 0, str(e)
+        print(f"  ✗ {source.name}: {e}")
+
+    return items
+
+
+def parse_entry(entry, source_name: str) -> CollectedItem | None:
+    """Parse a feed entry into a CollectedItem."""
+    title = entry.get('title', '')
+    if not title:
+        return None
+
+    # Get URL
+    url = entry.get('link', '')
+    if not url:
+        links = entry.get('links', [])
+        if links:
+            url = links[0].get('href', '')
+
+    # Get content
+    content = ""
+    if 'content' in entry:
+        content = entry.content[0].get('value', '')
+    elif 'summary' in entry:
+        content = entry.summary
+    elif 'description' in entry:
+        content = entry.description
+
+    # Clean HTML
+    import re
+    import html as html_module
+    content = re.sub(r'<[^>]+>', '', content)
+    content = html_module.unescape(content)
+    content = content.strip()[:2000]
+
+    # Get author
+    author = None
+    if 'author' in entry:
+        author = entry.author
+    elif 'authors' in entry and entry.authors:
+        author = entry.authors[0].get('name')
+
+    # Get published date
+    published_at = None
+    if 'published_parsed' in entry and entry.published_parsed:
+        try:
+            published_at = datetime(*entry.published_parsed[:6])
+        except (ValueError, TypeError):
+            pass
+    elif 'updated_parsed' in entry and entry.updated_parsed:
+        try:
+            published_at = datetime(*entry.updated_parsed[:6])
+        except (ValueError, TypeError):
+            pass
+
+    return CollectedItem(
+        title=title,
+        url=url,
+        content=content,
+        author=author,
+        published_at=published_at,
+        source_name=source_name,
+        source_type="rss",
+        category=None,
+    )
 
 
 async def run_collectors(
-    source_type: Optional[str] = None,
-    source_id: Optional[int] = None
+    source_id: int = None,
+    hours: int = 48,
 ):
-    """Run collectors.
+    """Run RSS collection with 10-way concurrency.
 
     Args:
-        source_type: Filter by type (rss, twitter, search, or None for all)
-        source_id: Filter by specific source ID
+        source_id: Optional specific source ID to collect from
+        hours: Time range for filtering (not used in collection, for reference)
     """
     print("=" * 60)
-    print("AI Daily News Bot - Information Collection")
+    print("AI Daily News Bot - RSS Collection (v2.0)")
     print("=" * 60)
     print(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"Concurrency: {FEED_CONCURRENCY}")
     print()
-
-    # Initialize collectors
-    rss_collector = RSSCollector()
-    twitter_collector = TwitterCollector()
-    search_collector = SearchCollector()
-
-    # Initialize deduplicator
-    deduplicator = Deduplicator()
-
-    # Load existing items for deduplication
-    async with async_session() as session:
-        result = await session.execute(
-            select(RawItem).where(RawItem.fetched_at >= datetime.utcnow().replace(hour=0, minute=0, second=0))
-        )
-        existing_items = result.scalars().all()
-        deduplicator.add_existing_items(list(existing_items))
 
     # Get sources
     async with async_session() as session:
-        query = select(Source).where(Source.enabled == True)
+        query = select(Source).where(Source.enabled == True, Source.type == 'rss')
 
-        if source_type:
-            query = query.where(Source.type == source_type)
         if source_id:
             query = query.where(Source.id == source_id)
 
@@ -126,83 +146,135 @@ async def run_collectors(
         sources = result.scalars().all()
 
     if not sources:
-        print("No sources found to collect from.")
-        return
+        print("No RSS sources found.")
+        return 0
 
-    print(f"Found {len(sources)} sources to collect from.")
+    print(f"Found {len(sources)} RSS sources")
     print()
 
-    # Collect from each source
-    total_collected = 0
-    total_duplicates = 0
-    errors = []
+    # Collect with concurrency
+    all_items = []
+    success_count = 0
+    fail_count = 0
 
-    for source in sources:
-        print(f"Collecting from [{source.type}] {source.name}...")
+    for i in range(0, len(sources), FEED_CONCURRENCY):
+        batch = sources[i:i + FEED_CONCURRENCY]
 
-        # Select collector based on type
-        if source.type == "rss":
-            collector = rss_collector
-        elif source.type == "twitter":
-            collector = twitter_collector
-        elif source.type == "search":
-            collector = search_collector
-        else:
-            print(f"  Unknown source type: {source.type}")
-            continue
+        print(f"Fetching batch {i // FEED_CONCURRENCY + 1} ({len(batch)} sources)...")
 
-        collected, duplicates, error = await collect_from_source(
-            source, collector, deduplicator
+        tasks = [fetch_feed(source) for source in batch]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        for source, result in zip(batch, results):
+            if isinstance(result, list):
+                all_items.extend(result)
+                if result:
+                    success_count += 1
+                    print(f"  ✓ {source.name}: {len(result)} items")
+                else:
+                    fail_count += 1
+                    print(f"  ✗ {source.name}: no items")
+            else:
+                fail_count += 1
+                print(f"  ✗ {source.name}: {result}")
+
+        progress = min(i + FEED_CONCURRENCY, len(sources))
+        print(f"Progress: {progress}/{len(sources)} sources ({success_count} ok, {fail_count} failed)")
+
+    print()
+    print(f"Fetched {len(all_items)} items from {success_count} sources")
+
+    # Deduplicate
+    print()
+    print("Deduplicating...")
+    deduplicator = Deduplicator()
+
+    # Load existing URLs
+    async with async_session() as session:
+        result = await session.execute(
+            select(RawItem.url).where(RawItem.url.isnot(None)).limit(10000)
         )
+        existing_urls = set(row[0] for row in result.fetchall())
 
-        if error:
-            print(f"  Error: {error}")
-            errors.append((source.name, error))
-        else:
-            print(f"  Collected: {collected}, Duplicates: {duplicates}")
-            total_collected += collected
-            total_duplicates += duplicates
+    # Simple URL dedup
+    unique_items = []
+    for item in all_items:
+        if item.url and item.url in existing_urls:
+            continue
+        if item.url:
+            existing_urls.add(item.url)
+        unique_items.append(item)
+
+    print(f"After dedup: {len(unique_items)} unique items")
+
+    # Store in database
+    print()
+    print("Storing in database...")
+    stored_count = 0
+
+    async with async_session() as session:
+        for item in unique_items:
+            # Find source ID
+            source_result = await session.execute(
+                select(Source.id).where(Source.name == item.source_name)
+            )
+            source_row = source_result.first()
+            source_id_val = source_row[0] if source_row else None
+
+            raw_item = RawItem(
+                source_id=source_id_val,
+                title=item.title,
+                content=item.content,
+                url=item.url,
+                author=item.author,
+                published_at=item.published_at,
+                status="pending",
+            )
+            session.add(raw_item)
+            stored_count += 1
+
+        # Update source last_fetched_at
+        for source in sources:
+            source.last_fetched_at = datetime.utcnow()
+            session.add(source)
+
+        await session.commit()
 
     # Summary
+    # Count items within 48h
+    cutoff = datetime.utcnow() - timedelta(hours=48)
+    recent_count = sum(1 for item in unique_items if item.published_at and item.published_at >= cutoff)
+
     print()
     print("=" * 60)
-    print("Summary")
+    print("Collection Summary")
     print("=" * 60)
-    print(f"Total collected: {total_collected}")
-    print(f"Total duplicates: {total_duplicates}")
-    print(f"Stored (unique): {total_collected - total_duplicates}")
-
-    if errors:
-        print(f"Errors: {len(errors)}")
-        for name, error in errors:
-            print(f"  - {name}: {error}")
-
+    print(f"Total fetched:     {len(all_items)}")
+    print(f"After dedup:       {len(unique_items)}")
+    print(f"Recent (48h):      {recent_count}")
+    print(f"Stored:            {stored_count}")
+    print(f"Sources ok:        {success_count}")
+    print(f"Sources failed:    {fail_count}")
     print()
     print(f"Completed at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
-
-def main():
-    import argparse
-
-    parser = argparse.ArgumentParser(description="Run information collectors")
-    parser.add_argument(
-        "--type", "-t",
-        choices=["rss", "twitter", "search", "all"],
-        default="all",
-        help="Source type to collect from"
-    )
-    parser.add_argument(
-        "--source-id", "-s",
-        type=int,
-        help="Specific source ID to collect from"
-    )
-
-    args = parser.parse_args()
-
-    source_type = None if args.type == "all" else args.type
-
-    asyncio.run(run_collectors(source_type, args.source_id))
+    return {
+        "stored": stored_count,
+        "recent_48h": recent_count,
+        "sources_ok": success_count,
+    }
 
 
 if __name__ == "__main__":
-    main()
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Run RSS collection")
+    parser.add_argument("--source-id", type=int, help="Specific source ID to collect")
+    parser.add_argument("--hours", type=int, default=48, help="Time range (hours)")
+
+    args = parser.parse_args()
+
+    asyncio.run(run_collectors(
+        source_id=args.source_id,
+        hours=args.hours,
+    ))

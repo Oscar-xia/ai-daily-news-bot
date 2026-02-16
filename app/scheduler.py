@@ -60,14 +60,57 @@ class SchedulerManager:
             logger.error(f"Report generation task failed: {e}")
 
     async def run_full_pipeline(self):
-        """Run the full pipeline: collect -> process -> generate."""
+        """Run the full pipeline: collect -> process -> generate -> send email."""
         logger.info("Starting full pipeline")
 
         await self.run_collectors()
         await self.run_processor()
         await self.run_generator()
 
+        # Auto send email if configured
+        await self.send_latest_report()
+
         logger.info("Full pipeline completed")
+
+    async def send_latest_report(self):
+        """Send the latest report via email if configured."""
+        from app.notification.email_sender import send_report, is_email_configured
+
+        if not is_email_configured():
+            logger.info("Email not configured, skipping auto-send")
+            return
+
+        try:
+            from pathlib import Path
+            from datetime import date
+
+            # Find latest report file
+            report_dir = Path("output/reports")
+            today_str = date.today().strftime("%Y-%m-%d")
+            latest_file = report_dir / f"{today_str}_latest.md"
+
+            if not latest_file.exists():
+                # Try to find any latest file
+                all_files = sorted(report_dir.glob("*_latest.md"), reverse=True)
+                if all_files:
+                    latest_file = all_files[0]
+                else:
+                    logger.warning("No report file found to send")
+                    return
+
+            content = latest_file.read_text(encoding='utf-8')
+            report_date = latest_file.stem.replace('_latest', '')
+
+            logger.info(f"Sending report via email: {latest_file.name}")
+            success = send_report(content, report_date)
+
+            if success:
+                logger.info("Report sent successfully via email")
+            else:
+                logger.warning("Failed to send report via email")
+
+        except Exception as e:
+            logger.error(f"Error sending report: {e}")
 
     def setup_jobs(self):
         """Setup scheduled jobs based on configuration."""

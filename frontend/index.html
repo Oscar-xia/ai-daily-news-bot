@@ -1,0 +1,1901 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Daily News Bot - 控制面板</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #0f172a;
+            --bg-card: #1e293b;
+            --bg-input: #334155;
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .header .subtitle {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        /* Category Tags - Version 2.0 */
+        .tag-ai-ml { background: #10b981; color: white; }
+        .tag-security { background: #ef4444; color: white; }
+        .tag-engineering { background: #3b82f6; color: white; }
+        .tag-tools { background: #f59e0b; color: white; }
+        .tag-opinion { background: #8b5cf6; color: white; }
+        .tag-other { background: #6b7280; color: white; }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--bg-card);
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+        }
+
+        .status-dot.error {
+            background: var(--danger);
+        }
+
+        /* Navigation */
+        .nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 15px;
+        }
+
+        .nav-btn {
+            padding: 10px 20px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 14px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .nav-btn:hover {
+            background: var(--bg-card);
+            color: var(--text);
+        }
+
+        .nav-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .card-desc {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .form-input, .form-select {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .form-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .form-hint {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        .btn-outline:hover {
+            background: var(--bg-input);
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        /* Tables */
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            font-weight: 500;
+            color: var(--text-muted);
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        td {
+            font-size: 14px;
+        }
+
+        tr:hover {
+            background: rgba(255,255,255,0.02);
+        }
+
+        /* Tags */
+        .tag {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .tag-rss { background: #3b82f6; color: white; }
+        .tag-custom { background: #8b5cf6; color: white; }
+        .tag-pending { background: #f59e0b; color: white; }
+        .tag-scored { background: #10b981; color: white; }
+        .tag-discarded { background: #6b7280; color: white; }
+
+        /* Toggle */
+        .toggle {
+            position: relative;
+            width: 48px;
+            height: 24px;
+        }
+
+        .toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--bg-input);
+            border-radius: 24px;
+            transition: 0.2s;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.2s;
+        }
+
+        .toggle input:checked + .toggle-slider {
+            background: var(--primary);
+        }
+
+        .toggle input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-card {
+            background: var(--bg-input);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* Sections */
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 24px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 2000;
+        }
+
+        .toast {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 20px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.3s ease;
+        }
+
+        .toast.success { border-left: 4px solid var(--success); }
+        .toast.error { border-left: 4px solid var(--danger); }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Log */
+        .log-container {
+            background: #000;
+            border-radius: 8px;
+            padding: 16px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .log-line {
+            margin-bottom: 4px;
+            color: #888;
+        }
+
+        .log-line.info { color: #4ade80; }
+        .log-line.error { color: #f87171; }
+        .log-line.warn { color: #fbbf24; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div>
+                <h1>🤖 AI Daily News Bot</h1>
+                <p class="subtitle">AI 技术日报自动生成系统</p>
+            </div>
+            <div class="status-badge">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="statusText">已连接</span>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="nav">
+            <button class="nav-btn active" data-section="dashboard">📊 仪表盘</button>
+            <button class="nav-btn" data-section="sources">📡 信息源</button>
+            <button class="nav-btn" data-section="config">⚙️ 配置</button>
+            <button class="nav-btn" data-section="scheduler">⏰ 调度器</button>
+            <button class="nav-btn" data-section="logs">📜 运行日志</button>
+        </nav>
+
+        <!-- Dashboard Section -->
+        <section class="section active" id="dashboard">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="statSources">-</div>
+                    <div class="stat-label">信息源</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="statRecent24h">-</div>
+                    <div class="stat-label">24h新文</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="statApproved">-</div>
+                    <div class="stat-label">已精选</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="statRejected">-</div>
+                    <div class="stat-label">未入选</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="statReports">-</div>
+                    <div class="stat-label">早报</div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top: 20px;">
+                <div class="card-header">
+                    <h3 class="card-title">快速操作</h3>
+                </div>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="btn btn-primary" onclick="runCollect()">
+                        📥 采集信息
+                    </button>
+                    <button class="btn btn-success" onclick="runProcess()">
+                        🔄 AI 处理
+                    </button>
+                    <button class="btn btn-primary" onclick="runGenerate()">
+                        📄 生成早报
+                    </button>
+                    <button class="btn btn-outline" onclick="runPipeline()">
+                        🚀 完整流程
+                    </button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">最近采集的信息</h3>
+                    <button class="btn btn-sm btn-outline" onclick="loadRecentItems()">刷新</button>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>标题</th>
+                                <th>来源</th>
+                                <th>分类</th>
+                                <th>状态</th>
+                                <th>时间</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recentItemsTable">
+                            <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">加载中...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title">📄 日报版本管理</h3>
+                        <p class="card-desc">查看和管理每日早报（支持多版本）</p>
+                    </div>
+                    <button class="btn btn-sm btn-outline" onclick="loadReports()">刷新</button>
+                </div>
+                <div id="reportsList" style="max-height: 400px; overflow-y: auto;">
+                    <p style="color: var(--text-muted); text-align: center; padding: 20px;">加载中...</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title">🗑️ 数据清理</h3>
+                        <p class="card-desc">清理不需要的采集数据</p>
+                    </div>
+                    <button class="btn btn-sm btn-outline" onclick="loadCleanupStats()">刷新统计</button>
+                </div>
+
+                <div id="cleanupStats" style="background: var(--bg-input); border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+                    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; text-align: center;">
+                        <div>
+                            <div style="font-size: 24px; font-weight: 600; color: #f59e0b;" id="cleanupPending">-</div>
+                            <div style="font-size: 12px; color: var(--text-muted);">待处理</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 24px; font-weight: 600; color: #ef4444;" id="cleanupDiscarded">-</div>
+                            <div style="font-size: 12px; color: var(--text-muted);">已丢弃</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 24px; font-weight: 600; color: #10b981;" id="cleanupProcessed">-</div>
+                            <div style="font-size: 12px; color: var(--text-muted);">已处理</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 24px; font-weight: 600; color: var(--primary);" id="cleanupTotal">-</div>
+                            <div style="font-size: 12px; color: var(--text-muted);">总计</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 24px; font-weight: 600; color: #6b7280;" id="cleanupOld">-</div>
+                            <div style="font-size: 12px; color: var(--text-muted);">7天前</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                    <button class="btn btn-outline" onclick="cleanupData('pending')">
+                        清除待处理
+                    </button>
+                    <button class="btn btn-outline" onclick="cleanupData('discarded')">
+                        清除已丢弃
+                    </button>
+                    <button class="btn btn-outline" onclick="cleanupData('old_raw')">
+                        清除7天前数据
+                    </button>
+                    <button class="btn btn-danger" onclick="cleanupData('all_raw')">
+                        清除所有原始数据
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sources Section -->
+        <section class="section" id="sources">
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title">信息源管理</h3>
+                        <p class="card-desc">配置 RSS 信息源（92 个精选源已预置）</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="openAddSourceModal()">+ 添加信息源</button>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>状态</th>
+                                <th>名称</th>
+                                <th>类型</th>
+                                <th>URL</th>
+                                <th>默认源</th>
+                                <th>最后采集</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sourcesTable">
+                            <tr><td colspan="7" style="text-align: center; color: var(--text-muted);">加载中...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Config Section -->
+        <section class="section" id="config">
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title">LLM 配置</h3>
+                        <p class="card-desc">配置硅基流动 API</p>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">API Key</label>
+                        <input type="password" class="form-input" id="llmApiKey" placeholder="输入你的 API Key">
+                        <p class="form-hint">获取地址: <a href="https://cloud.siliconflow.cn/" target="_blank" style="color: var(--primary);">cloud.siliconflow.cn</a></p>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">API Base URL</label>
+                        <input type="text" class="form-input" id="llmBaseUrl" value="https://api.siliconflow.cn/v1">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">模型选择</label>
+                        <select class="form-select" id="llmModel">
+                            <option value="Qwen/Qwen3-30B-A3B-Instruct-2507" selected>Qwen3-30B-A3B (推荐·MoE)</option>
+                            <option value="deepseek-ai/DeepSeek-V3.2">DeepSeek-V3.2 (旗舰)</option>
+                            <option value="deepseek-ai/DeepSeek-R1-0528-Qwen3-8B">DeepSeek-R1-Qwen3-8B (免费)</option>
+                            <option value="stepfun-ai/Step-3.5-Flash">Step-3.5-Flash (快速)</option>
+                            <option value="THUDM/GLM-5-9B-0416">GLM-5-9B (免费)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Temperature</label>
+                        <input type="number" class="form-input" id="llmTemperature" value="0.7" min="0" max="2" step="0.1">
+                        <p class="form-hint">推荐 0.7，更高的值会产生更有创意的输出</p>
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="saveLlmConfig()">保存 LLM 配置</button>
+            </div>
+
+            <!-- Email Config Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title">📧 邮件推送配置</h3>
+                        <p class="card-desc">配置 SMTP 邮件发送，日报发布时自动推送</p>
+                    </div>
+                    <label class="toggle">
+                        <input type="checkbox" id="emailEnabled" onchange="toggleEmailSection()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div id="emailConfigSection">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">发件人邮箱</label>
+                            <input type="email" class="form-input" id="emailSender" placeholder="your_email@qq.com">
+                            <p class="form-hint">支持 QQ/163/Gmail/Outlook 等邮箱</p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">邮箱授权码/应用密码</label>
+                            <input type="password" class="form-input" id="emailPassword" placeholder="不是登录密码">
+                            <p class="form-hint">QQ邮箱: 设置→账户→POP3/SMTP服务→生成授权码</p>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">发件人名称</label>
+                            <input type="text" class="form-input" id="emailSenderName" value="AI技术日报">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">收件人（逗号分隔）</label>
+                            <input type="text" class="form-input" id="emailReceivers" placeholder="a@example.com, b@example.com">
+                            <p class="form-hint">留空则发送给自己</p>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">SMTP 服务器（可选）</label>
+                            <input type="text" class="form-input" id="emailSmtpServer" placeholder="自动识别">
+                            <p class="form-hint">留空则根据邮箱自动识别</p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">SMTP 端口</label>
+                            <input type="number" class="form-input" id="emailSmtpPort" value="465">
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 10px; align-items: center;">
+                        <button class="btn btn-primary" onclick="saveEmailConfig()">保存邮件配置</button>
+                        <button class="btn btn-secondary" id="sendTestEmailBtn" type="button" onclick="sendTestEmail()">发送测试邮件</button>
+                        <span id="emailStatus" style="font-size: 13px; color: var(--text-muted);"></span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Scheduler Section -->
+        <section class="section" id="scheduler">
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title">定时任务配置</h3>
+                        <p class="card-desc">设置自动采集和生成早报的时间</p>
+                    </div>
+                    <label class="toggle">
+                        <input type="checkbox" id="schedulerEnabled" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">采集间隔（小时）</label>
+                        <select class="form-select" id="collectInterval">
+                            <option value="1">每 1 小时</option>
+                            <option value="2" selected>每 2 小时</option>
+                            <option value="4">每 4 小时</option>
+                            <option value="6">每 6 小时</option>
+                            <option value="12">每 12 小时</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">早报生成时间</label>
+                        <select class="form-select" id="reportHour">
+                            <option value="5">05:00</option>
+                            <option value="6" selected>06:00</option>
+                            <option value="7">07:00</option>
+                            <option value="8">08:00</option>
+                            <option value="9">09:00</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" onclick="saveSchedulerConfig()">保存调度配置</button>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title">漏斗筛选配置</h3>
+                        <p class="card-desc">控制信息从采集到日报的筛选流程</p>
+                    </div>
+                </div>
+
+                <div style="background: var(--bg-input); border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+                    <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 12px;">
+                        📊 三级漏斗: <strong>采集</strong> → <strong>三维评分</strong> → <strong>日报精选</strong>
+                    </p>
+                    <div style="display: flex; gap: 10px; font-size: 12px; color: var(--text-muted);">
+                        <span style="background: #3b82f6; padding: 4px 8px; border-radius: 4px;">采集: 10路并发</span>
+                        <span style="background: #8b5cf6; padding: 4px 8px; border-radius: 4px;">评分: 相关性+质量+时效性</span>
+                        <span style="background: #10b981; padding: 4px 8px; border-radius: 4px;">精选: Top N 高分</span>
+                    </div>
+                </div>
+
+                <h4 style="font-size: 14px; margin-bottom: 12px; color: var(--text-muted);">📥 采集阶段</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">时间范围（小时）</label>
+                        <input type="number" class="form-input" id="processHours" value="24" min="1" max="168">
+                        <p class="form-hint">采集最近 N 小时内的文章</p>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">历史去重天数</label>
+                        <input type="number" class="form-input" id="dedupDays" value="7" min="1" max="30">
+                    </div>
+                </div>
+
+                <h4 style="font-size: 14px; margin-bottom: 12px; margin-top: 20px; color: var(--text-muted);">🤖 精选阶段</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">目标精选数</label>
+                        <input type="number" class="form-input" id="reportTopN" value="15" min="5" max="30">
+                        <p class="form-hint">按评分排序，取 Top N 入选日报</p>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">参考分数线（3-30分）</label>
+                        <input type="number" class="form-input" id="reportMinScore" value="15" min="3" max="30">
+                        <p class="form-hint">仅供参考，不强制筛选</p>
+                    </div>
+                </div>
+
+                <p style="color: var(--text-muted); font-size: 12px; margin-top: 20px; margin-bottom: 12px;">
+                    💡 若文章数 ≤ 目标数，全部入选；否则取评分最高的 N 篇
+                </p>
+
+                <button class="btn btn-primary" onclick="saveFilterConfig()">保存筛选配置</button>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">当前任务状态</h3>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>任务</th>
+                                <th>状态</th>
+                                <th>下次运行</th>
+                                <th>上次运行</th>
+                            </tr>
+                        </thead>
+                        <tbody id="schedulerTable">
+                            <tr>
+                                <td>信息采集</td>
+                                <td><span class="tag tag-ai">运行中</span></td>
+                                <td id="nextCollect">-</td>
+                                <td id="lastCollect">-</td>
+                            </tr>
+                            <tr>
+                                <td>早报生成</td>
+                                <td><span class="tag tag-ai">运行中</span></td>
+                                <td id="nextReport">-</td>
+                                <td id="lastReport">-</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Logs Section -->
+        <section class="section" id="logs">
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title">运行日志</h3>
+                        <p class="card-desc">查看系统运行日志</p>
+                    </div>
+                    <div>
+                        <button class="btn btn-sm btn-outline" onclick="refreshLogs()">刷新</button>
+                        <button class="btn btn-sm btn-outline" onclick="clearLogs()">清空</button>
+                    </div>
+                </div>
+                <div class="log-container" id="logContainer">
+                    <!-- 日志将在页面加载时动态初始化 -->
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Add Source Modal -->
+    <div class="modal-overlay" id="addSourceModal">
+        <div class="modal" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>添加信息源</h3>
+                <button class="modal-close" onclick="closeAddSourceModal()">&times;</button>
+            </div>
+
+            <!-- Tabs -->
+            <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
+                <button class="nav-btn active" id="tabManual" onclick="switchAddTab('manual')">手动添加</button>
+                <button class="nav-btn" id="tabRecommended" onclick="switchAddTab('recommended')">默认信息源</button>
+            </div>
+
+            <!-- Manual Add Tab -->
+            <div id="manualAddTab">
+                <div class="form-group">
+                    <label class="form-label">类型</label>
+                    <select class="form-select" id="sourceType" onchange="updateSourceInputHint()">
+                        <option value="rss">RSS 订阅</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" id="sourceUrlLabel">RSS 订阅地址</label>
+                    <input type="text" class="form-input" id="sourceUrl" placeholder="https://example.com/feed.xml">
+                    <p class="form-hint" id="sourceUrlHint">💡 输入博客或新闻网站的 RSS/Atom 订阅地址</p>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">名称</label>
+                    <input type="text" class="form-input" id="sourceName" placeholder="例如: OpenAI Blog">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">分类</label>
+                    <select class="form-select" id="sourceCategory">
+                        <option value="ai-ml">🤖 AI / ML</option>
+                        <option value="security">🔒 安全</option>
+                        <option value="engineering">⚙️ 工程</option>
+                        <option value="tools">🛠 工具 / 开源</option>
+                        <option value="opinion">💡 观点 / 杂谈</option>
+                        <option value="other">📝 其他</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button class="btn btn-outline" onclick="testSource()">测试连接</button>
+                    <button class="btn btn-primary" onclick="addSource()">添加</button>
+                    <button class="btn btn-outline" onclick="closeAddSourceModal()">取消</button>
+                </div>
+                <div id="testResult" style="margin-top: 15px; display: none;"></div>
+            </div>
+
+            <!-- Recommended Sources Tab -->
+            <div id="recommendedAddTab" style="display: none;">
+                <p style="color: var(--text-muted); margin-bottom: 15px;">系统已预置 92 个精选 RSS 源，可直接启用或禁用。</p>
+                <p style="color: var(--text-muted); margin-bottom: 15px; font-size: 13px;">
+                    💡 提示：默认源已在数据库中配置，您可以在「信息源」页面中启用/禁用它们。
+                </p>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button class="btn btn-outline" onclick="closeAddSourceModal()">关闭</button>
+                    <button class="btn btn-primary" onclick="window.location.href='#sources'; closeAddSourceModal(); document.querySelector('[data-section=sources]').click();">前往信息源管理</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        // API Base URL
+        const API_BASE = window.location.origin + '/api';
+
+        // Navigation
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById(btn.dataset.section).classList.add('active');
+
+                // Load data for section
+                if (btn.dataset.section === 'dashboard') loadDashboard();
+                if (btn.dataset.section === 'sources') loadSources();
+                if (btn.dataset.section === 'config') loadConfig();
+                if (btn.dataset.section === 'scheduler') loadScheduler();
+            });
+        });
+
+        // Toast notification
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                <span>${type === 'success' ? '✓' : '✗'}</span>
+                <span>${message}</span>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // API Calls with timeout
+        async function apiGet(endpoint, timeoutMs = 30000) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+            try {
+                const res = await fetch(API_BASE + endpoint, { signal: controller.signal });
+                clearTimeout(timeoutId);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return await res.json();
+            } catch (e) {
+                clearTimeout(timeoutId);
+                console.error('API Error:', e);
+                return null;
+            }
+        }
+
+        async function apiPost(endpoint, data = {}, timeoutMs = 300000) {  // 5 minutes default timeout for long operations
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+            try {
+                const res = await fetch(API_BASE + endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data),
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                if (!res.ok) {
+                    const errorText = await res.text();
+                    throw new Error(`HTTP ${res.status}: ${errorText}`);
+                }
+                return await res.json();
+            } catch (e) {
+                clearTimeout(timeoutId);
+                console.error('API Error:', e);
+                if (e.name === 'AbortError') {
+                    showToast('请求超时，请稍后重试', 'error');
+                }
+                return null;
+            }
+        }
+
+        async function apiPut(endpoint, data = {}) {
+            try {
+                const res = await fetch(API_BASE + endpoint, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (!res.ok) throw new Error('API Error');
+                return await res.json();
+            } catch (e) {
+                console.error('API Error:', e);
+                return null;
+            }
+        }
+
+        async function apiDelete(endpoint) {
+            try {
+                const res = await fetch(API_BASE + endpoint, { method: 'DELETE' });
+                if (!res.ok) throw new Error('API Error');
+                return await res.json();
+            } catch (e) {
+                console.error('API Error:', e);
+                return null;
+            }
+        }
+
+        // Dashboard
+        async function loadDashboard() {
+            const stats = await apiGet('/stats');
+            if (stats) {
+                document.getElementById('statSources').textContent = stats.sources || 0;
+                document.getElementById('statRecent24h').textContent = stats.recent_24h || 0;
+                document.getElementById('statApproved').textContent = stats.approved || 0;
+                document.getElementById('statRejected').textContent = stats.rejected || 0;
+                document.getElementById('statReports').textContent = stats.reports || 0;
+            }
+            loadRecentItems();
+            loadCleanupStats();
+            loadReports();
+        }
+
+        async function loadRecentItems() {
+            const items = await apiGet('/items?limit=10');
+            const tbody = document.getElementById('recentItemsTable');
+
+            if (!items || items.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">暂无数据</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = items.map(item => `
+                <tr>
+                    <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        <a href="${item.url || '#'}" target="_blank" style="color: var(--text); text-decoration: none;">${item.title}</a>
+                    </td>
+                    <td>${item.source_name || '-'}</td>
+                    <td><span class="tag tag-${item.status === 'pending' ? 'pending' : 'scored'}">${getStatusName(item.status)}</span></td>
+                    <td>${formatDate(item.fetched_at)}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Reports management
+        async function loadReports() {
+            const reports = await apiGet('/reports?limit=50');
+            const container = document.getElementById('reportsList');
+
+            if (!reports || reports.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 20px;">暂无日报，点击"生成早报"创建</p>';
+                return;
+            }
+
+            let html = '';
+            reports.forEach(day => {
+                const versions = day.versions || [];
+                const latestVersion = versions[0];
+                const versionCount = versions.length;
+
+                html += `
+                    <div style="border: 1px solid var(--border); border-radius: 8px; margin-bottom: 12px; overflow: hidden;">
+                        <div style="background: var(--bg-input); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer;"
+                             onclick="toggleReportVersions('${day.date}')">
+                            <div>
+                                <span style="font-weight: 600;">📅 ${day.date}</span>
+                                <span style="color: var(--text-muted); margin-left: 10px; font-size: 13px;">
+                                    ${versionCount} 个版本
+                                    ${latestVersion ? `(最新: v${latestVersion.version})` : ''}
+                                </span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                ${latestVersion ? `
+                                    <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); viewReport(${latestVersion.id})">
+                                        查看最新
+                                    </button>
+                                ` : ''}
+                                <span style="color: var(--text-muted);" id="arrow-${day.date}">▼</span>
+                            </div>
+                        </div>
+                        <div id="versions-${day.date}" style="display: none; padding: 12px 16px; background: var(--bg-card);">
+                            ${versions.map(v => `
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; margin: 4px 0; background: var(--bg-input); border-radius: 6px;">
+                                    <div>
+                                        <span style="font-weight: 500;">v${v.version}</span>
+                                        <span style="color: var(--text-muted); margin-left: 10px; font-size: 12px;">
+                                            ${v.created_at ? formatDate(v.created_at) : '-'}
+                                        </span>
+                                        <span class="tag tag-ai-ml" style="margin-left: 10px;">
+                                            v${v.version}
+                                        </span>
+                                    </div>
+                                    <div style="display: flex; gap: 8px;">
+                                        <button class="btn btn-sm btn-outline" onclick="viewReport(${v.id})">查看</button>
+                                        <button class="btn btn-sm btn-success" onclick="sendReportEmail(${v.id}, this)">发送邮件</button>
+                                        <button class="btn btn-sm btn-danger" onclick="deleteReport(${v.id})">删除</button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function toggleReportVersions(date) {
+            const versionsDiv = document.getElementById(`versions-${date}`);
+            const arrow = document.getElementById(`arrow-${date}`);
+            if (versionsDiv.style.display === 'none') {
+                versionsDiv.style.display = 'block';
+                arrow.textContent = '▲';
+            } else {
+                versionsDiv.style.display = 'none';
+                arrow.textContent = '▼';
+            }
+        }
+
+        async function viewReport(reportId) {
+            const report = await apiGet(`/reports/${reportId}`);
+            if (!report) {
+                showToast('加载日报失败', 'error');
+                return;
+            }
+
+            // Create modal to display report
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay active';
+            modal.id = 'reportViewModal';
+            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+            modal.innerHTML = `
+                <div class="modal" style="max-width: 900px; max-height: 90vh;">
+                    <div class="modal-header">
+                        <div>
+                            <h3>${report.title || 'AI Daily News'}</h3>
+                            <p style="color: var(--text-muted); font-size: 13px; margin-top: 4px;">
+                                📅 ${report.report_date} | v${report.version} | ${report.status === 'published' ? '已发布' : '草稿'}
+                            </p>
+                        </div>
+                        <button class="modal-close" onclick="document.getElementById('reportViewModal').remove()">&times;</button>
+                    </div>
+                    <div style="max-height: 70vh; overflow-y: auto; padding: 10px 0;">
+                        <div style="background: var(--bg-input); border-radius: 8px; padding: 20px; font-size: 14px; line-height: 1.6;">
+                            <pre style="white-space: pre-wrap; word-wrap: break-word; font-family: inherit; margin: 0;">${escapeHtml(report.content || '(无内容)')}</pre>
+                        </div>
+                    </div>
+                    <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
+                        <button class="btn btn-outline" onclick="copyReportContent(${reportId})">复制内容</button>
+                        <button class="btn btn-outline" onclick="document.getElementById('reportViewModal').remove()">关闭</button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        async function copyReportContent(reportId) {
+            const report = await apiGet(`/reports/${reportId}`);
+            if (report && report.content) {
+                try {
+                    await navigator.clipboard.writeText(report.content);
+                    showToast('内容已复制到剪贴板');
+                } catch (e) {
+                    showToast('复制失败', 'error');
+                }
+            }
+        }
+
+        async function sendReportEmail(reportId, btn) {
+            // Check if email is configured
+            const config = await apiGet('/config');
+            if (!config || !config.email_configured) {
+                showToast('邮件未配置，请先在配置页面设置邮箱', 'error');
+                return;
+            }
+
+            // Disable button and show loading
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = '发送中...';
+
+            try {
+                const res = await fetch(API_BASE + `/email/send-report/${reportId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (res.ok) {
+                    const result = await res.json();
+                    showToast('✓ 日报已发送到 ' + (result.message || '邮箱'));
+                } else {
+                    const errorText = await res.text();
+                    try {
+                        const errorJson = JSON.parse(errorText);
+                        showToast('发送失败: ' + (errorJson.detail || errorText), 'error');
+                    } catch {
+                        showToast('发送失败: ' + errorText, 'error');
+                    }
+                }
+            } catch (e) {
+                showToast('发送失败: ' + (e.message || '网络错误'), 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        }
+
+        async function deleteReport(reportId) {
+            if (!confirm('确定要删除这个日报版本吗？此操作不可恢复！')) return;
+
+            const result = await apiDelete(`/reports/${reportId}`);
+            if (result) {
+                showToast('日报已删除');
+                loadReports();
+                loadDashboard(); // Refresh stats
+            }
+        }
+
+        // Sources
+        async function loadSources() {
+            const sources = await apiGet('/sources');
+            const tbody = document.getElementById('sourcesTable');
+
+            if (!sources || sources.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">暂无信息源，请添加</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = sources.map(s => `
+                <tr>
+                    <td>
+                        <label class="toggle">
+                            <input type="checkbox" ${s.enabled ? 'checked' : ''} onchange="toggleSource(${s.id}, this.checked)">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </td>
+                    <td>${s.name}</td>
+                    <td><span class="tag tag-${s.type}">${getTypeName(s.type)}</span></td>
+                    <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">${s.url || '-'}</td>
+                    <td>${s.is_default ? '<span style="color: var(--success);">✓</span>' : '-'}</td>
+                    <td>${s.last_fetched_at ? formatDate(s.last_fetched_at) : '从未'}</td>
+                    <td>
+                        ${!s.is_default ? `<button class="btn btn-sm btn-danger" onclick="deleteSource(${s.id})">删除</button>` : ''}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function openAddSourceModal() {
+            document.getElementById('addSourceModal').classList.add('active');
+            // Reset to manual tab
+            switchAddTab('manual');
+            // Clear form
+            document.getElementById('sourceName').value = '';
+            document.getElementById('sourceUrl').value = '';
+            document.getElementById('sourceType').value = 'rss';
+            document.getElementById('sourceCategory').value = 'ai';
+            document.getElementById('testResult').style.display = 'none';
+            updateSourceInputHint();
+        }
+
+        function closeAddSourceModal() {
+            document.getElementById('addSourceModal').classList.remove('active');
+        }
+
+        async function addSource() {
+            const data = {
+                name: document.getElementById('sourceName').value,
+                type: document.getElementById('sourceType').value,
+                url: document.getElementById('sourceUrl').value,
+                config: JSON.stringify({ category: document.getElementById('sourceCategory').value }),
+                enabled: true
+            };
+
+            const result = await apiPost('/sources', data);
+            if (result) {
+                showToast('信息源添加成功');
+                closeAddSourceModal();
+                loadSources();
+            } else {
+                showToast('添加失败', 'error');
+            }
+        }
+
+        async function toggleSource(id, enabled) {
+            const result = await apiPut(`/sources/${id}`, { enabled });
+            if (result) {
+                showToast(enabled ? '已启用' : '已禁用');
+            }
+        }
+
+        async function deleteSource(id) {
+            if (!confirm('确定要删除这个信息源吗？')) return;
+            const result = await apiDelete(`/sources/${id}`);
+            if (result) {
+                showToast('已删除');
+                loadSources();
+            }
+        }
+
+        async function runCollectSource(id) {
+            showToast('开始采集...');
+            await apiPost('/collect', { source_id: id });
+        }
+
+        // Source Modal Tabs
+        function switchAddTab(tab) {
+            document.getElementById('tabManual').classList.toggle('active', tab === 'manual');
+            document.getElementById('tabRecommended').classList.toggle('active', tab === 'recommended');
+            document.getElementById('manualAddTab').style.display = tab === 'manual' ? 'block' : 'none';
+            document.getElementById('recommendedAddTab').style.display = tab === 'recommended' ? 'block' : 'none';
+        }
+
+        // Update input hints based on source type
+        function updateSourceInputHint() {
+            const type = document.getElementById('sourceType').value;
+            const urlLabel = document.getElementById('sourceUrlLabel');
+            const urlInput = document.getElementById('sourceUrl');
+            const urlHint = document.getElementById('sourceUrlHint');
+
+            const configs = {
+                rss: {
+                    label: 'RSS 订阅地址',
+                    placeholder: 'https://example.com/feed.xml',
+                    hint: '💡 输入博客或新闻网站的 RSS/Atom 订阅地址'
+                },
+                twitter: {
+                    label: 'Twitter 用户名',
+                    placeholder: 'sama 或 @sama',
+                    hint: '💡 只需输入用户名，系统会通过 RSSHub 抓取'
+                },
+                search: {
+                    label: '搜索关键词',
+                    placeholder: 'AI news today',
+                    hint: '⚠️ 使用 Tavily AI 搜索，需要先配置 Tavily API Key'
+                }
+            };
+
+            const config = configs[type];
+            urlLabel.textContent = config.label;
+            urlInput.placeholder = config.placeholder;
+            urlHint.innerHTML = config.hint;
+            urlInput.value = '';
+            document.getElementById('testResult').style.display = 'none';
+        }
+
+        // Test source connection
+        async function testSource() {
+            const type = document.getElementById('sourceType').value;
+            const url = document.getElementById('sourceUrl').value;
+            const name = document.getElementById('sourceName').value || 'Test';
+            const category = document.getElementById('sourceCategory').value;
+
+            if (!url) {
+                showToast('请输入地址', 'error');
+                return;
+            }
+
+            const resultDiv = document.getElementById('testResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<p style="color: var(--text-muted);">🔄 测试连接中...</p>';
+
+            const result = await apiPost('/sources/test', {
+                name: name,
+                type: type,
+                url: url,
+                config: JSON.stringify({ category: category })
+            });
+
+            if (result && result.success) {
+                let html = `<p style="color: var(--success);">✓ 连接成功</p>`;
+                if (result.feed_title) {
+                    html += `<p style="color: var(--text-muted);">Feed: ${result.feed_title}</p>`;
+                }
+                if (result.item_count !== undefined) {
+                    html += `<p style="color: var(--text-muted);">获取到 ${result.item_count} 条内容</p>`;
+                }
+                if (result.preview && result.preview.length > 0) {
+                    html += `<div style="margin-top: 10px; font-size: 12px; color: var(--text-muted);">预览:`;
+                    result.preview.slice(0, 3).forEach(item => {
+                        html += `<br>• ${item.title.substring(0, 50)}${item.title.length > 50 ? '...' : ''}`;
+                    });
+                    html += '</div>';
+                }
+                resultDiv.innerHTML = html;
+            } else {
+                resultDiv.innerHTML = `<p style="color: var(--danger);">✗ 连接失败: ${result?.error || '未知错误'}</p>`;
+            }
+        }
+
+        // Cleanup functions
+        async function loadCleanupStats() {
+            const stats = await apiGet('/cleanup/stats');
+            if (stats) {
+                document.getElementById('cleanupPending').textContent = stats.pending || 0;
+                document.getElementById('cleanupDiscarded').textContent = stats.discarded || 0;
+                document.getElementById('cleanupProcessed').textContent = stats.processed || 0;
+                document.getElementById('cleanupTotal').textContent = stats.total_raw || 0;
+                document.getElementById('cleanupOld').textContent = stats.old_items_7d || 0;
+            }
+        }
+
+        async function cleanupData(action) {
+            const actionNames = {
+                'pending': '待处理',
+                'discarded': '已丢弃',
+                'old_raw': '7天前的',
+                'all_raw': '所有原始'
+            };
+
+            const confirmMsg = action === 'all_raw'
+                ? '⚠️ 确定要清除所有原始数据吗？此操作不可恢复！'
+                : `确定要清除${actionNames[action]}数据吗？`;
+
+            if (!confirm(confirmMsg)) {
+                return;
+            }
+
+            showToast('正在清理...');
+
+            const result = await apiPost('/cleanup', {
+                action: action,
+                days: 7
+            });
+
+            if (result && result.success) {
+                showToast(`已清除 ${result.deleted_count} 条数据`);
+                loadCleanupStats();
+                loadDashboard();
+            } else {
+                showToast('清理失败: ' + (result?.error || '未知错误'), 'error');
+            }
+        }
+
+        // Config
+        async function loadConfig() {
+            const config = await apiGet('/config');
+            if (config) {
+                document.getElementById('llmApiKey').value = config.siliconflow_api_key || '';
+                document.getElementById('llmBaseUrl').value = config.siliconflow_base_url || 'https://api.siliconflow.cn/v1';
+                document.getElementById('llmModel').value = config.siliconflow_model || 'Qwen/Qwen3-30B-A3B-Instruct-2507';
+            }
+            // Load email config
+            await loadEmailConfig();
+        }
+
+        async function saveLlmConfig() {
+            const data = {
+                siliconflow_api_key: document.getElementById('llmApiKey').value,
+                siliconflow_base_url: document.getElementById('llmBaseUrl').value,
+                siliconflow_model: document.getElementById('llmModel').value
+            };
+            const result = await apiPut('/config', data);
+            if (result) {
+                showToast('LLM 配置已保存');
+            } else {
+                showToast('保存失败', 'error');
+            }
+        }
+
+        // Scheduler
+        async function loadScheduler() {
+            const config = await apiGet('/config');
+            if (config) {
+                // Scheduler config
+                document.getElementById('schedulerEnabled').checked = config.scheduler_enabled !== false;
+                document.getElementById('collectInterval').value = config.collect_interval_hours || 2;
+                document.getElementById('reportHour').value = config.report_generation_hour || 6;
+
+                // Filter config (Version 2.0)
+                document.getElementById('processHours').value = config.process_hours || 48;
+                document.getElementById('dedupDays').value = config.dedup_days || 7;
+                document.getElementById('reportMinScore').value = config.report_min_score || 20;
+                document.getElementById('reportTopN').value = config.report_top_n || 15;
+            }
+
+            // Load scheduler status
+            const status = await apiGet('/scheduler/status');
+            if (status) {
+                document.getElementById('nextCollect').textContent = status.next_collect !== '-' ? formatDate(status.next_collect) : '-';
+                document.getElementById('lastCollect').textContent = status.last_collect !== '-' ? formatDate(status.last_collect) : '-';
+                document.getElementById('nextReport').textContent = status.next_report !== '-' ? formatDate(status.next_report) : '-';
+                document.getElementById('lastReport').textContent = status.last_report !== '-' ? formatDate(status.last_report) : '-';
+            }
+        }
+
+        async function saveSchedulerConfig() {
+            const data = {
+                scheduler_enabled: document.getElementById('schedulerEnabled').checked,
+                collect_interval_hours: parseInt(document.getElementById('collectInterval').value),
+                report_generation_hour: parseInt(document.getElementById('reportHour').value),
+            };
+            const result = await apiPut('/config', data);
+            if (result) {
+                showToast('调度配置已保存');
+            }
+        }
+
+        async function saveFilterConfig() {
+            const data = {
+                process_hours: parseInt(document.getElementById('processHours').value),
+                dedup_days: parseInt(document.getElementById('dedupDays').value),
+                report_min_score: parseInt(document.getElementById('reportMinScore').value),
+                report_top_n: parseInt(document.getElementById('reportTopN').value),
+            };
+            const result = await apiPut('/config', data);
+            if (result) {
+                showToast('筛选配置已保存');
+            }
+        }
+
+        // Email Configuration
+        async function loadEmailConfig() {
+            const config = await apiGet('/config');
+            if (config) {
+                const emailEnabled = document.getElementById('emailEnabled');
+                emailEnabled.checked = config.email_enabled || false;
+                document.getElementById('emailSender').value = config.email_sender || '';
+                document.getElementById('emailSenderName').value = config.email_sender_name || 'AI技术日报';
+                document.getElementById('emailReceivers').value = config.email_receivers || '';
+                document.getElementById('emailSmtpServer').value = config.email_smtp_server || '';
+                document.getElementById('emailSmtpPort').value = config.email_smtp_port || 465;
+
+                // Show password placeholder if configured
+                const passwordInput = document.getElementById('emailPassword');
+                if (config.email_configured) {
+                    passwordInput.placeholder = '●●●●●●●● (已设置)';
+                } else {
+                    passwordInput.placeholder = '不是登录密码';
+                }
+
+                // Update status
+                const statusEl = document.getElementById('emailStatus');
+                if (statusEl) {
+                    if (config.email_configured) {
+                        statusEl.innerHTML = '<span style="color: var(--success);">✓ 邮件已配置</span>';
+                    } else if (config.email_sender) {
+                        statusEl.innerHTML = '<span style="color: var(--warning);">⚠ 缺少授权码</span>';
+                    } else {
+                        statusEl.innerHTML = '';
+                    }
+                }
+            }
+        }
+
+        function toggleEmailSection() {
+            // No longer disabling the section, just update visual cue
+            const enabled = document.getElementById('emailEnabled').checked;
+            const statusEl = document.getElementById('emailStatus');
+            // Status is updated in loadEmailConfig
+        }
+
+        async function saveEmailConfig() {
+            const passwordInput = document.getElementById('emailPassword');
+            const password = passwordInput.value;
+
+            const data = {
+                email_enabled: document.getElementById('emailEnabled').checked,
+                email_sender: document.getElementById('emailSender').value,
+                email_sender_name: document.getElementById('emailSenderName').value,
+                email_receivers: document.getElementById('emailReceivers').value,
+                email_smtp_server: document.getElementById('emailSmtpServer').value || undefined,
+                email_smtp_port: parseInt(document.getElementById('emailSmtpPort').value) || undefined,
+            };
+
+            // Only include password if user entered a new value
+            if (password && password.length > 0) {
+                data.email_password = password;
+            }
+
+            // Remove undefined values
+            Object.keys(data).forEach(key => {
+                if (data[key] === undefined || data[key] === '') {
+                    delete data[key];
+                }
+            });
+
+            const result = await apiPut('/config', data);
+            if (result) {
+                showToast('邮件配置已保存');
+                // Clear password field and reload config
+                passwordInput.value = '';
+                await loadEmailConfig();
+            }
+        }
+
+        async function sendTestEmail() {
+            // Debug: confirm function is called
+            console.log('sendTestEmail() called');
+
+            const btn = document.getElementById('sendTestEmailBtn');
+            if (!btn) {
+                console.error('sendTestEmailBtn not found');
+                alert('错误：找不到按钮元素');
+                return;
+            }
+
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = '发送中...';
+
+            console.log('Sending test email...');
+
+            try {
+                const res = await fetch(API_BASE + '/email/test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                console.log('Response status:', res.status);
+
+                if (res.ok) {
+                    const result = await res.json();
+                    showToast('✓ 测试邮件已发送，请检查收件箱');
+                    console.log('Email sent:', result);
+                } else {
+                    const errorText = await res.text();
+                    console.error('Email failed:', errorText);
+                    try {
+                        const errorJson = JSON.parse(errorText);
+                        showToast('发送失败: ' + (errorJson.detail || errorText), 'error');
+                    } catch {
+                        showToast('发送失败: ' + errorText, 'error');
+                    }
+                }
+            } catch (e) {
+                console.error('Email error:', e);
+                showToast('发送失败: ' + (e.message || '网络错误'), 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        }
+
+        // Actions
+        async function runCollect() {
+            showToast('开始采集信息...');
+            try {
+                const result = await apiPost('/collect');
+                if (result) {
+                    showToast(`采集完成，共 ${result.count || 0} 条`);
+                    loadDashboard();
+                    return result.count || 0;
+                } else {
+                    showToast('采集失败，请查看控制台', 'error');
+                    return 0;
+                }
+            } catch (e) {
+                showToast('采集异常: ' + e.message, 'error');
+                return 0;
+            }
+        }
+
+        async function runProcess() {
+            showToast('开始 AI 处理（可能需要较长时间）...');
+            try {
+                const result = await apiPost('/process');
+                if (result) {
+                    showToast(`处理完成，共 ${result.count || 0} 条`);
+                    loadDashboard();
+                    return result.count || 0;
+                } else {
+                    showToast('处理失败，请查看控制台', 'error');
+                    return 0;
+                }
+            } catch (e) {
+                showToast('处理异常: ' + e.message, 'error');
+                return 0;
+            }
+        }
+
+        async function runGenerate() {
+            showToast('开始生成早报...');
+            try {
+                const result = await apiPost('/reports/generate');
+                if (result) {
+                    showToast('早报生成成功');
+                    loadDashboard();
+                    return true;
+                } else {
+                    showToast('生成失败，请查看控制台', 'error');
+                    return false;
+                }
+            } catch (e) {
+                showToast('生成异常: ' + e.message, 'error');
+                return false;
+            }
+        }
+
+        async function runPipeline() {
+            showToast('开始完整流程...');
+
+            // Step 1: Collect
+            showToast('📥 步骤 1/3: 采集信息...');
+            const collectCount = await runCollect();
+
+            // Step 2: Process (only if we have collected items)
+            showToast('🔄 步骤 2/3: AI 处理...');
+            const processCount = await runProcess();
+
+            // Step 3: Generate report
+            showToast('📄 步骤 3/3: 生成早报...');
+            const generated = await runGenerate();
+
+            // Summary
+            showToast(`完整流程完成！采集: ${collectCount}, 处理: ${processCount}`);
+        }
+
+        // Logs
+        function refreshLogs() {
+            // TODO: Load real logs from API
+            showToast('日志已刷新');
+        }
+
+        function clearLogs() {
+            document.getElementById('logContainer').innerHTML = '';
+            showToast('日志已清空');
+        }
+
+        function addLog(message, type = '') {
+            const container = document.getElementById('logContainer');
+            const line = document.createElement('div');
+            line.className = `log-line ${type}`;
+            // 使用北京时间格式化
+            const now = new Date();
+            const beijingTime = now.toLocaleString('zh-CN', {
+                timeZone: 'Asia/Shanghai',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            }).replace(/\//g, '-');
+            line.textContent = `[${beijingTime}] ${message}`;
+            container.appendChild(line);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // Helpers
+        function getCategoryName(cat) {
+            const map = {
+                'ai-ml': 'AI/ML',
+                'security': '安全',
+                'engineering': '工程',
+                'tools': '工具',
+                'opinion': '观点',
+                'other': '其他'
+            };
+            return map[cat] || '其他';
+        }
+
+        function getCategoryFromConfig(config) {
+            try {
+                const parsed = JSON.parse(config || '{}');
+                return parsed.category || 'other';
+            } catch {
+                return 'other';
+            }
+        }
+
+        function getTypeName(type) {
+            const map = { rss: 'RSS', custom: '自定义' };
+            return map[type] || type;
+        }
+
+        function getStatusName(status) {
+            const map = { pending: '待处理', scored: '已评分', discarded: '已丢弃' };
+            return map[status] || status;
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            // 后端返回的是 UTC 时间，需要转换为北京时间 (UTC+8)
+            // 如果时间字符串没有时区标识，添加 'Z' 表示 UTC
+            let normalizedDateStr = dateStr;
+            if (!dateStr.endsWith('Z') && !dateStr.includes('+') && !dateStr.includes('T')) {
+                // 格式如 "2024-01-15 10:30:00"，当作 UTC 处理
+                normalizedDateStr = dateStr.replace(' ', 'T') + 'Z';
+            } else if (dateStr.includes('T') && !dateStr.endsWith('Z') && !dateStr.includes('+')) {
+                // ISO 格式但无时区，添加 Z
+                normalizedDateStr = dateStr + 'Z';
+            }
+            const d = new Date(normalizedDateStr);
+            // 使用北京时间时区格式化
+            return d.toLocaleString('zh-CN', {
+                timeZone: 'Asia/Shanghai',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            }).replace(/\//g, '-');
+        }
+
+        // Initialize
+        loadDashboard();
+
+        // Initialize logs with current time
+        addLog('系统启动', 'info');
+        addLog('调度器已启用', 'info');
+        addLog('等待下一次采集任务...');
+
+        // Check API health
+        async function checkHealth() {
+            try {
+                const res = await fetch('/health');
+                const data = await res.json();
+                document.getElementById('statusDot').classList.remove('error');
+                document.getElementById('statusText').textContent = '已连接';
+            } catch (e) {
+                document.getElementById('statusDot').classList.add('error');
+                document.getElementById('statusText').textContent = '连接失败';
+            }
+        }
+
+        checkHealth();
+        setInterval(checkHealth, 30000);
+    </script>
+</body>
+</html>

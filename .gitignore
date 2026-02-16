@@ -58,3 +58,9 @@ htmlcov/
 # OS
 .DS_Store
 Thumbs.db
+
+# Docker
+docker-compose.override.yml
+
+# Development (AI assistant files)
+agent/

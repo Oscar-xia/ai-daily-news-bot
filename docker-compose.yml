@@ -1,0 +1,40 @@
+# AI Daily News Bot - Docker Compose
+# Usage: docker compose up -d
+
+services:
+  ai-daily-news-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ai-daily-news-bot
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      # Persistent data
+      - ./data:/app/data
+      - ./output:/app/output
+      - ./logs:/app/logs
+      # Configuration (optional - can use environment variables instead)
+      - ./.env:/app/.env:ro
+    environment:
+      # Override settings via environment variables if needed
+      - SCHEDULER_ENABLED=true
+      - COLLECT_INTERVAL_HOURS=2
+      - REPORT_GENERATION_HOUR=6
+      # Uncomment and configure for email notifications
+      # - EMAIL_ENABLED=true
+      # - EMAIL_SENDER=your_email@qq.com
+      # - EMAIL_PASSWORD=your_password
+      # - EMAIL_RECEIVERS=receiver@example.com
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

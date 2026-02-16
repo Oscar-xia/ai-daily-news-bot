@@ -30,5 +30,8 @@ click>=8.1.7
 pytest>=7.4.4
 pytest-asyncio>=0.23.3
 
-# Logging
-structlog>=24.1.0
+# Markdown
+markdown2>=2.4.0
+
+# Timezone
+pytz>=2023.3

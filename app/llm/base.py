@@ -52,8 +52,8 @@ class BaseLLM(ABC):
         raise LLMError(f"Failed after {max_retries} retries: {last_error}")
 
 
-class OpenAILLM(BaseLLM):
-    """OpenAI-compatible LLM provider (supports OpenAI, 智谱, 通义)."""
+class OpenAICompatibleLLM(BaseLLM):
+    """OpenAI-compatible LLM provider (硅基流动等)."""
 
     def __init__(
         self,
@@ -100,81 +100,18 @@ class OpenAILLM(BaseLLM):
                 raise LLMError(f"Invalid response format: {e}")
 
 
-class ZhipuLLM(BaseLLM):
-    """智谱 AI (GLM) provider."""
-
-    def __init__(self, api_key: str, model: str = "glm-4"):
-        self.api_key = api_key
-        self.model = model
-        self.base_url = "https://open.bigmodel.cn/api/paas/v4"
-
-    async def chat(
-        self,
-        messages: List[Dict[str, str]],
-        temperature: float = 0.7,
-        max_tokens: int = 2000,
-    ) -> str:
-        """Send chat completion request to 智谱 API."""
-        url = f"{self.base_url}/chat/completions"
-
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-        }
-
-        payload = {
-            "model": self.model,
-            "messages": messages,
-            "temperature": temperature,
-            "max_tokens": max_tokens,
-        }
-
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            response = await client.post(url, headers=headers, json=payload)
-
-            if response.status_code != 200:
-                raise LLMError(f"API error: {response.status_code} - {response.text}")
-
-            data = response.json()
-
-            try:
-                return data["choices"][0]["message"]["content"]
-            except (KeyError, IndexError) as e:
-                raise LLMError(f"Invalid response format: {e}")
-
-
 def get_llm() -> BaseLLM:
     """Get LLM instance based on configuration."""
     provider = settings.llm_provider.lower()
 
-    if provider == "openai":
-        if not settings.openai_api_key:
-            raise LLMError("OPENAI_API_KEY not configured")
+    if provider == "siliconflow":
+        if not settings.siliconflow_api_key:
+            raise LLMError("SILICONFLOW_API_KEY not configured")
 
-        return OpenAILLM(
-            api_key=settings.openai_api_key,
-            base_url=settings.openai_base_url,
-            model=settings.openai_model,
-        )
-
-    elif provider == "zhipu":
-        if not settings.zhipu_api_key:
-            raise LLMError("ZHIPU_API_KEY not configured")
-
-        return ZhipuLLM(
-            api_key=settings.zhipu_api_key,
-            model=settings.zhipu_model,
-        )
-
-    elif provider == "qwen":
-        if not settings.dashscope_api_key:
-            raise LLMError("DASHSCOPE_API_KEY not configured")
-
-        # 通义千问使用 OpenAI 兼容接口
-        return OpenAILLM(
-            api_key=settings.dashscope_api_key,
-            base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
-            model=settings.qwen_model,
+        return OpenAICompatibleLLM(
+            api_key=settings.siliconflow_api_key,
+            base_url=settings.siliconflow_base_url,
+            model=settings.siliconflow_model,
         )
 
     else:

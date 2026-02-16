@@ -1,287 +1,391 @@
 """
 Prompt templates for AI Daily News Bot.
-All prompts are designed for Chinese language output.
+Version 2.0 - 基于 ai-daily-digest 的三维评分体系
 """
 
 from typing import List, Optional
+import json
 
 
 # =============================================================================
-# System Prompts
+# 评分 + 分类 + 关键词（合并为一次调用）
 # =============================================================================
 
-SYSTEM_PROMPT_FILTER = """你是一个专业的新闻筛选助手，负责判断新闻内容是否值得报道。
+SYSTEM_PROMPT_SCORING = """你是 AI 技术日报的内容策展人，负责筛选高质量的技术内容。
 
-你的领域关注范围：
-1. AI 技术：机器学习、LLM、深度学习、AI 产品发布、技术突破
-2. AI 投资：AI 领域融资、VC 动态、初创公司、IPO
-3. Web3：加密货币、区块链、DeFi、NFT、监管政策
+## 评分任务
 
-判断标准：
-- 具有新闻价值（新产品、重大更新、融资、政策变化、技术突破）
-- 不是纯教程、使用体验分享、营销软文
-- 信息来源可靠，内容具体
+对每篇文章进行三个维度的评分（1-10），同时完成分类和关键词提取。
 
-请严格按照要求回答 YES 或 NO。"""
+## 评分维度
+
+### 相关性 (relevance) - 对 AI 技术从业者的价值
+- 10: 所有 AI 从业者必须知道的重大突破
+- 7-9: 对大部分从业者有价值
+- 4-6: 对特定领域有价值
+- 1-3: 与 AI 技术关联不大
+
+### 质量 (quality) - 内容深度和原创性
+- 10: 深度原创，突破性洞见
+- 7-9: 独特视角，分析深入
+- 4-6: 信息准确，表达清晰
+- 1-3: 内容浅或营销感强
+
+### 时效性 (timeliness) - 当前阅读价值
+- 10: 24小时内发布的重大消息
+- 7-9: 近期重要进展（一周内）
+- 4-6: 常青内容
+- 1-3: 内容过时
+
+## 分类（必须从以下选一个）
+
+- ai-ml: AI、机器学习、LLM、深度学习
+- security: 安全、隐私、漏洞、加密
+- engineering: 软件工程、架构、编程语言、系统设计
+- tools: 开发工具、开源项目、新库/框架
+- opinion: 行业观点、个人思考、职业发展
+- other: 其他
+
+## 关键词
+
+提取 2-4 个最能代表文章主题的关键词（英文，简短）"""
 
 
-SYSTEM_PROMPT_SUMMARY = """你是一个专业的新闻摘要编辑，擅长用简洁的语言总结新闻要点。
+def get_scoring_prompt(articles: List[dict]) -> str:
+    """Generate prompt for scoring multiple articles.
+
+    Args:
+        articles: List of dicts with index, title, description, sourceName
+    """
+    articles_list = "\n\n---\n\n".join([
+        f"Index {a['index']}: [{a.get('sourceName', 'Unknown')}] {a['title']}\n{a.get('description', '')[:300]}"
+        for a in articles
+    ])
+
+    return f"""{SYSTEM_PROMPT_SCORING}
+
+## 待评分文章
+
+{articles_list}
+
+## 输出格式（严格 JSON，无 markdown 代码块）
+
+{{
+  "results": [
+    {{
+      "index": 0,
+      "relevance": 8,
+      "quality": 7,
+      "timeliness": 9,
+      "category": "ai-ml",
+      "keywords": ["GPT-4", "multimodal", "benchmark"]
+    }}
+  ]
+}}"""
+
+
+# =============================================================================
+# 摘要 + 中文标题 + 推荐理由
+# =============================================================================
+
+SYSTEM_PROMPT_SUMMARY = """你是技术内容摘要专家。请为文章完成三件事：
+
+1. **中文标题** (titleZh): 将英文标题翻译成自然的中文。如果原标题是中文则保持不变。
+
+2. **摘要** (summary): 4-6 句话的结构化摘要
+   - 核心问题/主题（1句）
+   - 关键论点/方案/发现（2-3句）
+   - 结论/核心观点（1句）
+   要求：
+   - 直接说重点，不用"本文讨论了"开头
+   - 包含具体技术名词、数据、方案名称
+   - 保留关键数字（性能提升%、用户数、版本号等）
+   - 读者 30 秒读完摘要就能决定是否读原文
+
+3. **推荐理由** (reason): 1 句话说明为什么值得读，区别于摘要
+
+用中文回答。"""
+
+
+def get_summary_prompt(title: str, content: str, source: str = "") -> str:
+    """Generate prompt for summarizing an article."""
+    source_info = f"\n来源: {source}" if source else ""
+
+    return f"""{SYSTEM_PROMPT_SUMMARY}
+
+## 文章
+
+标题: {title}
+{source_info}
+
+内容:
+{content[:2000] if content else '（无内容）'}
+
+## 输出格式（严格 JSON）
+
+{{
+  "titleZh": "中文标题",
+  "summary": "摘要内容...",
+  "reason": "推荐理由..."
+}}"""
+
+
+# =============================================================================
+# 趋势总结（今日看点）
+# =============================================================================
+
+SYSTEM_PROMPT_HIGHLIGHTS = """你是技术趋势分析师。根据今日精选文章，归纳技术圈的主要趋势。"""
+
+
+def get_highlights_prompt(articles: List[dict]) -> str:
+    """Generate prompt for creating today's highlights.
+
+    Args:
+        articles: List of dicts with title_zh/title, summary, category
+    """
+    article_list = "\n".join([
+        f"{i+1}. [{a.get('category', 'other')}] {a.get('title_zh') or a.get('title', '')} — {(a.get('summary') or '')[:100]}"
+        for i, a in enumerate(articles[:15])
+    ])
+
+    return f"""{SYSTEM_PROMPT_HIGHLIGHTS}
+
+根据以下今日精选技术文章，写一段 3-5 句话的"今日看点"总结。
 
 要求：
-- 摘要不超过 100 字
-- 突出最重要的信息
-- 语言简洁专业
-- 保持客观中立"""
+- 提炼 2-3 个主要技术趋势或话题
+- 不要逐篇列举，要做宏观归纳
+- 风格简洁有力，像新闻导语
+- 用中文回答
 
+文章列表：
+{article_list}
 
-SYSTEM_PROMPT_KEYWORDS = """你是一个关键词提取专家，负责从新闻中提取关键信息。
-
-要求：
-- 提取 3-5 个关键词
-- 关键词应该反映新闻的核心主题
-- 包含公司名、技术名、产品名等重要实体
-- 返回 JSON 数组格式"""
-
-
-SYSTEM_PROMPT_SCORE = """你是一个新闻价值评估专家，负责对新闻进行打分。
-
-打分标准（0-100分）：
-- 重要性（40%）：是否影响行业格局、是否是重大突破
-- 时效性（30%）：是否是最新的消息、是否独家
-- 相关性（30%）：与 AI/投资/Web3 的关联程度
-
-请只返回一个 0-100 的整数分数。"""
-
-
-SYSTEM_PROMPT_REPORT = """你是一个科技新闻编辑，负责生成每日早报。
-
-要求：
-1. 按分类组织内容（AI技术、AI投资、Web3）
-2. 每条新闻包含：标题、简洁摘要、来源链接
-3. 使用 Markdown 格式
-4. 添加目录和适当的标题层级
-5. 语言简洁专业，适合技术人员阅读
-6. 每个分类下按重要性排序"""
+直接返回纯文本总结，不要 JSON，不要 markdown 格式。"""
 
 
 # =============================================================================
-# Prompt Functions
+# 响应解析函数
 # =============================================================================
 
-def get_filter_prompt(title: str, content: str) -> str:
-    """Generate prompt for filtering news relevance."""
-    return f"""请判断以下新闻是否值得报道：
-
-标题: {title}
-
-内容: {content[:1000] if content else '（无内容）'}
-
-请只回答 YES 或 NO。"""
-
-
-def get_summary_prompt(title: str, content: str) -> str:
-    """Generate prompt for summarizing news."""
-    return f"""请为以下新闻生成一句话摘要（不超过100字）：
-
-标题: {title}
-
-内容: {content[:2000] if content else '（无内容）'}
-
-摘要："""
-
-
-def get_keywords_prompt(title: str, content: str) -> str:
-    """Generate prompt for extracting keywords."""
-    return f"""请从以下新闻中提取 3-5 个关键词：
-
-标题: {title}
-
-内容: {content[:1000] if content else '（无内容）'}
-
-请以 JSON 数组格式返回关键词，例如：["OpenAI", "GPT-5", "发布"]
-
-关键词："""
-
-
-def get_score_prompt(title: str, content: str) -> str:
-    """Generate prompt for scoring news importance."""
-    return f"""请为以下新闻打分（0-100分）：
-
-标题: {title}
-
-内容: {content[:1000] if content else '（无内容）'}
-
-考虑因素：
-- 重要性：是否影响行业
-- 时效性：是否最新消息
-- 相关性：与 AI/投资/Web3 的关联程度
-
-请只返回一个 0-100 的整数分数："""
-
-
-def get_report_prompt(items: List[dict], date_str: str) -> str:
-    """Generate prompt for creating daily report.
-
-    Args:
-        items: List of processed news items with title, summary, category, url
-        date_str: Date string for the report
+def parse_scoring_response(response: str) -> List[dict]:
+    """Parse scoring response from LLM.
 
     Returns:
-        Formatted prompt string
-    """
-    # Group items by category
-    ai_items = []
-    investment_items = []
-    web3_items = []
-
-    for item in items:
-        category = item.get("category", "mixed")
-        if category == "ai":
-            ai_items.append(item)
-        elif category == "investment":
-            investment_items.append(item)
-        elif category == "web3":
-            web3_items.append(item)
-        else:
-            # Mixed items go to AI by default
-            ai_items.append(item)
-
-    # Format items by category
-    def format_items(item_list: List[dict]) -> str:
-        if not item_list:
-            return "（无）"
-
-        formatted = []
-        for i, item in enumerate(item_list, 1):
-            title = item.get("title", "无标题")
-            summary = item.get("summary", "无摘要")
-            url = item.get("url", "")
-
-            formatted.append(f"""
-{i}. {title}
-   摘要：{summary}
-   来源：{url}
-""")
-        return "\n".join(formatted)
-
-    prompt = f"""请根据以下信息生成 {date_str} 的每日早报。
-
----
-
-## AI 技术新闻:
-{format_items(ai_items)}
-
----
-
-## AI 投资新闻:
-{format_items(investment_items)}
-
----
-
-## Web3 新闻:
-{format_items(web3_items)}
-
----
-
-请生成 Markdown 格式的早报，包含：
-1. 主标题和日期
-2. 目录
-3. 三个分类的新闻内容
-4. 每条新闻包含标题、摘要和来源链接
-
-早报内容："""
-
-    return prompt
-
-
-def get_dedup_prompt(new_title: str, old_titles: List[str]) -> str:
-    """Generate prompt for checking duplicate news.
-
-    Args:
-        new_title: Title of the new news item
-        old_titles: List of existing news titles to compare against
-
-    Returns:
-        Formatted prompt string
-    """
-    old_titles_str = "\n".join([f"- {t}" for t in old_titles])
-
-    return f"""请判断以下新闻是否与已有新闻重复：
-
-新新闻标题: {new_title}
-
-已有新闻标题:
-{old_titles_str}
-
-如果新新闻与已有新闻报道的是同一事件，请回答 DUPLICATE。
-如果是不同事件或不同角度的报道，请回答 UNIQUE。
-
-请只回答 DUPLICATE 或 UNIQUE："""
-
-
-# =============================================================================
-# Utility Functions
-# =============================================================================
-
-def parse_keywords_response(response: str) -> List[str]:
-    """Parse keywords from LLM response.
-
-    Args:
-        response: Raw LLM response string
-
-    Returns:
-        List of keywords
-    """
-    import json
-    import re
-
-    # Try to find JSON array in response
-    json_match = re.search(r'\[.*?\]', response, re.DOTALL)
-    if json_match:
-        try:
-            keywords = json.loads(json_match.group())
-            if isinstance(keywords, list):
-                return [str(k).strip() for k in keywords if k]
-        except json.JSONDecodeError:
-            pass
-
-    # Fallback: split by comma or newline
-    cleaned = response.strip().strip('[]').strip('"\'')
-    if ',' in cleaned:
-        return [k.strip().strip('"\'') for k in cleaned.split(',') if k.strip()]
-    elif '\n' in cleaned:
-        return [k.strip().strip('"\'') for k in cleaned.split('\n') if k.strip()]
-    else:
-        return [cleaned] if cleaned else []
-
-
-def parse_score_response(response: str) -> int:
-    """Parse score from LLM response.
-
-    Args:
-        response: Raw LLM response string
-
-    Returns:
-        Integer score between 0-100
+        List of dicts with index, relevance, quality, timeliness, category, keywords
     """
     import re
 
-    # Find first number in response
-    match = re.search(r'\d+', response)
-    if match:
-        score = int(match.group())
-        return min(max(score, 0), 100)  # Clamp to 0-100
+    response = response.strip()
 
-    return 50  # Default score
+    # Strip markdown code blocks if present
+    if response.startswith('```'):
+        response = re.sub(r'^```(?:json)?\n?', '', response)
+        response = re.sub(r'\n?```$', '', response)
+
+    try:
+        data = json.loads(response)
+        results = []
+
+        for item in data.get('results', []):
+            # Clamp scores to 1-10
+            def clamp(v):
+                return min(10, max(1, int(v))) if isinstance(v, (int, float)) else 5
+
+            results.append({
+                'index': item.get('index', 0),
+                'relevance': clamp(item.get('relevance', 5)),
+                'quality': clamp(item.get('quality', 5)),
+                'timeliness': clamp(item.get('timeliness', 5)),
+                'category': item.get('category', 'other') if item.get('category') in [
+                    'ai-ml', 'security', 'engineering', 'tools', 'opinion', 'other'
+                ] else 'other',
+                'keywords': item.get('keywords', [])[:4] if isinstance(item.get('keywords'), list) else [],
+            })
+
+        return results
+
+    except json.JSONDecodeError:
+        return []
 
 
-def parse_filter_response(response: str) -> bool:
-    """Parse filter response.
-
-    Args:
-        response: Raw LLM response string
+def parse_summary_response(response: str) -> dict:
+    """Parse summary response from LLM.
 
     Returns:
-        True if news should be kept, False if should be discarded
+        Dict with titleZh, summary, reason
     """
-    return response.strip().upper().startswith('YES')
+    import re
+
+    response = response.strip()
+
+    # Strip markdown code blocks if present
+    if response.startswith('```'):
+        response = re.sub(r'^```(?:json)?\n?', '', response)
+        response = re.sub(r'\n?```$', '', response)
+
+    try:
+        data = json.loads(response)
+        return {
+            'title_zh': data.get('titleZh', ''),
+            'summary': data.get('summary', ''),
+            'reason': data.get('reason', ''),
+        }
+    except json.JSONDecodeError:
+        return {
+            'title_zh': '',
+            'summary': response[:200] if response else '',
+            'reason': '',
+        }
+
+
+# =============================================================================
+# 今日启示（技术风向 / 深度思考 / 变现机会）
+# =============================================================================
+
+SYSTEM_PROMPT_INSIGHTS = """你是一位资深技术投资人 + 连续创业者，同时深谙技术趋势。
+
+你的任务是基于今日技术文章，写出真正有见地的"启示"——不是泛泛而谈的空话，而是能让读者拍案叫绝的独特洞察。
+
+## 核心原则
+
+1. **反直觉**：大多数人看不到的角度，你说出来
+2. **可行动**：读者看完知道下一步该做什么
+3. **有锋芒**：可以有争议性观点，比平庸好一万倍
+4. **讲人话**：不用"赋能"、"闭环"、"底层逻辑"这类废话
+
+## 输出风格示例
+
+❌ 差（空话）：
+"AI 发展迅速，建议关注相关技术，把握投资机会。"
+
+✅ 好（有洞见）：
+"所有人都在卷 Agent 编排，但真正赚钱的是 Agent 的'审计层'——谁能证明 AI 的决策是可信的，谁就掌握了企业市场的入场券。"
+
+❌ 差（泛泛）：
+"建议学习 Python 和机器学习基础知识。"
+
+✅ 好（具体且有反直觉）：
+"与其学怎么写 Prompt，不如学怎么设计'Human-in-the-loop'的决策节点——这是未来 3 年最稀缺的能力，因为纯 AI 方案在合规行业根本过不了审计。"
+"""
+
+
+def get_insights_prompt(articles: List[dict]) -> str:
+    """Generate prompt for creating daily insights.
+
+    Args:
+        articles: List of dicts with title_zh/title, summary, category, keywords
+    """
+    # 构建文章摘要列表
+    article_list = []
+    for i, a in enumerate(articles[:15]):
+        title = a.get('title_zh') or a.get('title', '')
+        summary = (a.get('summary') or '')[:150]
+        category = a.get('category', 'other')
+        keywords = ', '.join(a.get('keywords', [])[:3])
+        article_list.append(f"{i+1}. [{category}] {title}\n   摘要: {summary}\n   关键词: {keywords}")
+
+    articles_str = "\n\n".join(article_list)
+
+    return f"""{SYSTEM_PROMPT_INSIGHTS}
+
+## 今日精选文章
+
+{articles_str}
+
+---
+
+请基于以上文章，输出三个模块的启示。
+
+## 输出格式（严格 JSON）
+
+{{
+  "techTrend": "技术风向：2-3 句话。指出真正值得投入的技术方向，要有具体理由，不是'AI 很重要'这种废话。",
+  "deepThought": "深度思考：2-3 句话。提出一个反直觉或引人深思的问题/观点，可以有争议性。",
+  "moneyShot": "变现机会：2-3 句话。从今天的内容中挖掘具体的商业化/投资机会，越具体越好，包括目标用户、痛点、为什么现在是好时机。"
+}}
+
+## 写作要求
+
+- 每个模块 2-3 句话，总共不超过 200 字
+- 必须有具体的技术名词、公司名、数据或场景
+- 宁可犀利也不要平庸
+- 如果某篇文章特别重要，可以点名引用
+"""
+
+
+def parse_insights_response(response: str) -> dict:
+    """Parse insights response from LLM.
+
+    Returns:
+        Dict with techTrend, deepThought, moneyShot
+    """
+    import re
+
+    response = response.strip()
+
+    # Strip markdown code blocks if present
+    if response.startswith('```'):
+        response = re.sub(r'^```(?:json)?\n?', '', response)
+        response = re.sub(r'\n?```$', '', response)
+
+    try:
+        data = json.loads(response)
+        return {
+            'tech_trend': data.get('techTrend', ''),
+            'deep_thought': data.get('deepThought', ''),
+            'money_shot': data.get('moneyShot', ''),
+        }
+    except json.JSONDecodeError:
+        return {
+            'tech_trend': '',
+            'deep_thought': '',
+            'money_shot': '',
+        }
+
+
+# =============================================================================
+# 被淘汰文章说明
+# =============================================================================
+
+def get_rejected_prompt(selected: List[dict], rejected: List[dict]) -> str:
+    """Generate prompt for explaining rejected articles.
+
+    Args:
+        selected: List of selected articles with title, score
+        rejected: List of rejected articles with title, score, category
+    """
+    selected_str = "\n".join([
+        f"- {s.get('title', '')[:50]} (评分: {s.get('score', 0)}/30)"
+        for s in selected[:5]
+    ])
+
+    rejected_str = "\n".join([
+        f"- [{r.get('category', 'other')}] {r.get('title', '')[:50]} (评分: {r.get('score', 0)}/30)"
+        for r in rejected[:5]
+    ])
+
+    return f"""你是技术日报编辑。今日有 {len(selected)} 篇入选，{len(rejected)} 篇未入选。
+
+## 入选文章（部分）
+{selected_str}
+
+## 未入选文章
+{rejected_str}
+
+请用 2-3 句话简要说明：
+1. 这些未入选文章大致是什么内容
+2. 为什么没有入选（如：评分较低、与主题关联度不够、时效性不足等）
+3. 如果有价值，可以提及哪类读者可能感兴趣
+
+风格要求：
+- 直接说重点，不用"以下是..."开头
+- 可以有轻微的"惋惜感"，比如"如果你对XX感兴趣，这篇值得一看"
+- 不需要逐篇解释，做一个整体说明
+
+直接返回纯文本，不要 JSON，不要 markdown 格式。"""
+
+
+# =============================================================================
+# 辅助函数
+# =============================================================================
