@@ -93,11 +93,11 @@ class TestLLM:
     def test_prompts_import(self):
         """Test that prompts module can be imported."""
         from app.llm.prompts import (
-            get_filter_prompt,
+            get_scoring_prompt,
             get_summary_prompt,
-            get_score_prompt,
+            get_highlights_prompt,
         )
 
-        assert get_filter_prompt is not None
+        assert get_scoring_prompt is not None
         assert get_summary_prompt is not None
-        assert get_score_prompt is not None
+        assert get_highlights_prompt is not None
