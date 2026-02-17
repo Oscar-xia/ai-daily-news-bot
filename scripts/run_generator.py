@@ -143,14 +143,19 @@ async def run_generator(
     print()
 
     # Get processed items with raw_item and source preloaded
+    # Only include articles published within last 24h to avoid duplicates across days
+    cutoff_time = datetime.utcnow() - timedelta(hours=24)
+
     async with async_session() as session:
         query = (
             select(ProcessedItem)
             .options(
                 selectinload(ProcessedItem.raw_item).selectinload(RawItem.source)
             )
+            .join(RawItem, ProcessedItem.raw_item_id == RawItem.id)
             .where(ProcessedItem.approved == True)
             .where(ProcessedItem.total_score >= min_score)
+            .where(RawItem.published_at >= cutoff_time)  # Only recent articles
             .order_by(ProcessedItem.total_score.desc())
             .limit(top_n * 2)  # Get more for category distribution
         )
