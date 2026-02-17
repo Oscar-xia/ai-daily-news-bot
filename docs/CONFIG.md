@@ -111,25 +111,21 @@ PROCESS_HOURS=24                    # 处理时间窗口（小时）
 
 ## 信息源配置
 
-### 添加自定义源
+### 添加自定义 RSS 源
 
 ```bash
-# RSS 源
 python scripts/cli.py source add -n "博客名称" -t rss -u "https://example.com/feed.xml"
-
-# Twitter 用户
-python scripts/cli.py source add -n "用户名" -t twitter -u "twitter_handle"
 ```
 
-### Twitter 采集
-
-依赖 RSSHub，建议自建：
+### 管理信息源
 
 ```bash
-docker run -d --name rsshub -p 1200:1200 diygod/rsshub
-```
+# 列出所有源
+python scripts/cli.py source list
 
-配置：`RSSHUB_BASE_URL=http://localhost:1200`
+# 禁用某个源
+python scripts/cli.py source disable <ID>
+```
 
 ---
 

@@ -13,7 +13,7 @@
 
 ## 功能亮点
 
-- **多源采集** - RSS、Twitter、AI 搜索，覆盖 90+ 信息源
+- **多源采集** - RSS 订阅，覆盖 90+ 顶级技术博客
 - **AI 处理** - 智能去重、相关性筛选、摘要生成、三维评分
 - **日报生成** - Markdown 格式，含趋势分析和可视化图表
 - **邮件推送** - 自动发送日报到指定邮箱
@@ -151,15 +151,13 @@ ai-daily-news-bot/
 ## 常见问题
 
 <details>
-<summary>Twitter 采集失败？</summary>
-
-Twitter 采集依赖 RSSHub。公共实例有限制，建议自建：
+<summary>如何添加自定义 RSS 源？</summary>
 
 ```bash
-docker run -d --name rsshub -p 1200:1200 diygod/rsshub
+python scripts/cli.py source add -n "博客名称" -t rss -u "https://example.com/feed.xml"
 ```
 
-然后修改 `.env`：`RSSHUB_BASE_URL=http://localhost:1200`
+在 Web 界面也可以添加：http://localhost:8000 → 信息源
 </details>
 
 <details>
