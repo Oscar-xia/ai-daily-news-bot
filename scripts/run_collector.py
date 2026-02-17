@@ -207,13 +207,30 @@ async def run_collectors(
 
     print(f"After dedup: {len(unique_items)} unique items")
 
+    # Filter by time - only keep items within 48h
+    cutoff = datetime.utcnow() - timedelta(hours=hours)
+    recent_items = [
+        item for item in unique_items
+        if item.published_at and item.published_at >= cutoff
+    ]
+
+    # Also include items without published_at (might be recent)
+    no_time_items = [item for item in unique_items if not item.published_at]
+
+    print(f"Within {hours}h: {len(recent_items)} items")
+    print(f"No timestamp: {len(no_time_items)} items (will include)")
+
+    items_to_store = recent_items + no_time_items
+    skipped_count = len(unique_items) - len(items_to_store)
+    print(f"Skipped (old): {skipped_count} items")
+
     # Store in database
     print()
     print("Storing in database...")
     stored_count = 0
 
     async with async_session() as session:
-        for item in unique_items:
+        for item in items_to_store:
             # Find source ID
             source_result = await session.execute(
                 select(Source.id).where(Source.name == item.source_name)
@@ -241,17 +258,13 @@ async def run_collectors(
         await session.commit()
 
     # Summary
-    # Count items within 48h
-    cutoff = datetime.utcnow() - timedelta(hours=48)
-    recent_count = sum(1 for item in unique_items if item.published_at and item.published_at >= cutoff)
-
     print()
     print("=" * 60)
     print("Collection Summary")
     print("=" * 60)
     print(f"Total fetched:     {len(all_items)}")
     print(f"After dedup:       {len(unique_items)}")
-    print(f"Recent (48h):      {recent_count}")
+    print(f"Skipped (old):     {skipped_count}")
     print(f"Stored:            {stored_count}")
     print(f"Sources ok:        {success_count}")
     print(f"Sources failed:    {fail_count}")
@@ -260,7 +273,7 @@ async def run_collectors(
 
     return {
         "stored": stored_count,
-        "recent_48h": recent_count,
+        "skipped": skipped_count,
         "sources_ok": success_count,
     }
 
