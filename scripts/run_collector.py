@@ -184,28 +184,27 @@ async def run_collectors(
     print()
     print(f"Fetched {len(all_items)} items from {success_count} sources")
 
-    # Deduplicate
+    # Deduplicate using Deduplicator (URL + title similarity)
     print()
-    print("Deduplicating...")
-    deduplicator = Deduplicator()
+    print("Deduplicating (URL + title similarity)...")
 
-    # Load existing URLs
+    # Load existing items from database
     async with async_session() as session:
         result = await session.execute(
-            select(RawItem.url).where(RawItem.url.isnot(None)).limit(10000)
+            select(RawItem).where(RawItem.url.isnot(None)).limit(10000)
         )
-        existing_urls = set(row[0] for row in result.fetchall())
+        existing_items = result.scalars().all()
 
-    # Simple URL dedup
-    unique_items = []
-    for item in all_items:
-        if item.url and item.url in existing_urls:
-            continue
-        if item.url:
-            existing_urls.add(item.url)
-        unique_items.append(item)
+    # Use full deduplication (URL + title similarity)
+    deduplicator = Deduplicator(title_similarity_threshold=0.85)
+    unique_items, duplicate_items = deduplicator.deduplicate(all_items, existing_items)
 
     print(f"After dedup: {len(unique_items)} unique items")
+    print(f"Duplicates removed: {len(duplicate_items)}")
+    if duplicate_items:
+        # Show first few duplicates for debugging
+        for item, reason in duplicate_items[:3]:
+            print(f"  - {item.title[:50]}... ({reason})")
 
     # Filter by time - only keep items within 48h
     cutoff = datetime.utcnow() - timedelta(hours=hours)
