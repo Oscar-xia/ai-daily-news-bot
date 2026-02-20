@@ -131,6 +131,68 @@ def get_summary_prompt(title: str, content: str, source: str = "") -> str:
 
 
 # =============================================================================
+# 简化版摘要（仅标题+一句话简介，用于未入选文章）
+# =============================================================================
+
+SYSTEM_PROMPT_BRIEF = """你是技术内容摘要专家。请为文章生成：
+
+1. **中文标题** (titleZh): 将英文标题翻译成自然的中文
+2. **一句话简介** (brief): 用1句话（20-40字）概括文章核心内容
+
+要求：
+- 简介要包含具体的技术名词或关键信息
+- 直接说重点，不用"本文介绍了"开头
+- 用中文回答"""
+
+
+def get_brief_prompt(title: str, content: str) -> str:
+    """Generate prompt for brief summary (title + one sentence)."""
+    return f"""{SYSTEM_PROMPT_BRIEF}
+
+## 文章
+
+标题: {title}
+
+内容:
+{content[:1000] if content else '（无内容）'}
+
+## 输出格式（严格 JSON）
+
+{{
+  "titleZh": "中文标题",
+  "brief": "一句话简介..."
+}}"""
+
+
+def parse_brief_response(response: str) -> dict:
+    """Parse brief summary response from LLM.
+
+    Returns:
+        Dict with title_zh, brief
+    """
+    import re
+
+    response = response.strip()
+
+    # Strip markdown code blocks if present
+    if response.startswith('```'):
+        response = re.sub(r'^```(?:json)?\n?', '', response)
+        response = re.sub(r'\n?```$', '', response)
+
+    try:
+        data = json.loads(response)
+        return {
+            'title_zh': data.get('titleZh', ''),
+            'brief': data.get('brief', ''),
+        }
+    except json.JSONDecodeError:
+        return {
+            'title_zh': '',
+            'brief': '',
+        }
+
+
+# =============================================================================
 # 趋势总结（今日看点）
 # =============================================================================
 

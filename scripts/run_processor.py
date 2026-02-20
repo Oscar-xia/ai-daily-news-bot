@@ -21,8 +21,10 @@ from app.llm.base import simple_chat
 from app.llm.prompts import (
     get_scoring_prompt,
     get_summary_prompt,
+    get_brief_prompt,
     parse_scoring_response,
     parse_summary_response,
+    parse_brief_response,
 )
 from app.config import settings
 
@@ -72,6 +74,27 @@ async def summarize_article(title: str, content: str, source: str) -> dict:
     except Exception as e:
         print(f"    Summary error: {e}")
         return {'title_zh': '', 'summary': '', 'reason': ''}
+
+
+async def generate_brief(title: str, content: str) -> dict:
+    """Generate brief summary for an article (one sentence).
+
+    Args:
+        title: Article title
+        content: Article content
+
+    Returns:
+        Dict with title_zh, brief
+    """
+    prompt = get_brief_prompt(title, content)
+
+    try:
+        response = await simple_chat(prompt, max_tokens=200)
+        result = parse_brief_response(response)
+        return result
+    except Exception as e:
+        print(f"    Brief error: {e}")
+        return {'title_zh': '', 'brief': ''}
 
 
 async def run_processor(
@@ -231,27 +254,39 @@ async def run_processor(
 
             processed_count += 1
 
-        # Mark remaining items as scored (but not processed) - create ProcessedItem without summary
-        for scored in scored_items:
-            if scored not in top_items:
-                raw_item = scored['item']
-                raw_item.status = "scored"
+        # Generate brief summaries for rejected items
+        rejected_items_list = [s for s in scored_items if s not in top_items]
+        if rejected_items_list:
+            print()
+            print(f"Generating brief summaries for {len(rejected_items_list)} rejected items...")
 
-                # Create ProcessedItem without summary (approved=False)
-                processed = ProcessedItem(
-                    raw_item_id=raw_item.id,
-                    relevance=scored['relevance'],
-                    quality=scored['quality'],
-                    timeliness=scored['timeliness'],
-                    total_score=scored['total_score'],
-                    category=scored['category'],
-                    keywords=json.dumps(scored['keywords']),
-                    title_zh='',  # No Chinese title for rejected items
-                    summary='',   # No summary for rejected items
-                    reason='',    # No reason for rejected items
-                    approved=False,  # Not approved for report
-                )
-                session.add(processed)
+        for i, scored in enumerate(rejected_items_list):
+            raw_item = scored['item']
+            raw_item.status = "scored"
+
+            print(f"  [{i+1}/{len(rejected_items_list)}] Brief: {raw_item.title[:40]}...")
+
+            # Generate brief summary (one sentence in Chinese)
+            brief_data = await generate_brief(
+                raw_item.title,
+                raw_item.content or '',
+            )
+
+            # Create ProcessedItem with brief summary (approved=False)
+            processed = ProcessedItem(
+                raw_item_id=raw_item.id,
+                relevance=scored['relevance'],
+                quality=scored['quality'],
+                timeliness=scored['timeliness'],
+                total_score=scored['total_score'],
+                category=scored['category'],
+                keywords=json.dumps(scored['keywords']),
+                title_zh=brief_data.get('title_zh', ''),
+                summary=brief_data.get('brief', ''),  # Store brief in summary field
+                reason='',
+                approved=False,  # Not approved for report
+            )
+            session.add(processed)
 
         await session.commit()
 

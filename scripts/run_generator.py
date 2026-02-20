@@ -211,20 +211,8 @@ async def run_generator(
         rejected_items = []
         for proc in rejected_processed:
             if proc.raw_item:
-                # Get keywords for description
-                keywords = []
-                if proc.keywords:
-                    try:
-                        keywords = json.loads(proc.keywords)[:3]
-                    except:
-                        pass
-
-                # Build brief description: category + keywords
-                category_label = CATEGORY_META.get(proc.category, {'label': proc.category})['label']
-                if keywords:
-                    brief = f"{category_label} · {' '.join(keywords)}"
-                else:
-                    brief = category_label
+                # Use AI-generated brief summary (one sentence in Chinese)
+                brief = proc.summary if proc.summary else proc.raw_item.content[:80] if proc.raw_item.content else '暂无简介'
 
                 rejected_items.append({
                     'title': proc.title_zh or proc.raw_item.title,
