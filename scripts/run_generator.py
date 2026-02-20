@@ -211,11 +211,26 @@ async def run_generator(
         rejected_items = []
         for proc in rejected_processed:
             if proc.raw_item:
+                # Get keywords for description
+                keywords = []
+                if proc.keywords:
+                    try:
+                        keywords = json.loads(proc.keywords)[:3]
+                    except:
+                        pass
+
+                # Build brief description: category + keywords
+                category_label = CATEGORY_META.get(proc.category, {'label': proc.category})['label']
+                if keywords:
+                    brief = f"{category_label} · {' '.join(keywords)}"
+                else:
+                    brief = category_label
+
                 rejected_items.append({
                     'title': proc.title_zh or proc.raw_item.title,
                     'original_title': proc.raw_item.title,
                     'url': proc.raw_item.url,
-                    'summary': proc.summary or (proc.raw_item.content[:150] if proc.raw_item.content else ''),
+                    'brief': brief,
                     'score': proc.total_score,
                     'category': proc.category,
                 })
@@ -395,9 +410,9 @@ async def run_generator(
         for item in rejected_items[:15]:
             title = item['title'][:40] + ('...' if len(item['title']) > 40 else '')
             url = item['url'] or '#'
-            summary = item['summary'][:80].replace('\n', ' ') + ('...' if len(item['summary']) > 80 else '')
+            brief = item['brief']
             score = item['score']
-            content += f"| [{title}]({url}) | {summary} | {score}/30 |\n"
+            content += f"| [{title}]({url}) | {brief} | {score}/30 |\n"
 
         content += """
 ---
