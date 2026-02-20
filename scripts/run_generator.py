@@ -194,15 +194,17 @@ async def run_generator(
     insights = await generate_insights(articles_for_highlights)
     print(f"✓ Insights generated")
 
-    # Query rejected articles (approved=False)
+    # Query rejected articles (approved=False) with full info for table
     print("Querying rejected articles...")
     async with async_session() as reject_session:
         rejected_result = await reject_session.execute(
             select(ProcessedItem)
-            .options(selectinload(ProcessedItem.raw_item))
+            .options(
+                selectinload(ProcessedItem.raw_item).selectinload(RawItem.source)
+            )
             .where(ProcessedItem.approved == False)
             .order_by(ProcessedItem.total_score.desc())
-            .limit(10)
+            .limit(20)
         )
         rejected_processed = rejected_result.scalars().all()
 
@@ -210,23 +212,15 @@ async def run_generator(
         for proc in rejected_processed:
             if proc.raw_item:
                 rejected_items.append({
-                    'title': proc.raw_item.title,
+                    'title': proc.title_zh or proc.raw_item.title,
+                    'original_title': proc.raw_item.title,
+                    'url': proc.raw_item.url,
+                    'summary': proc.summary or (proc.raw_item.content[:150] if proc.raw_item.content else ''),
                     'score': proc.total_score,
                     'category': proc.category,
                 })
 
     print(f"Found {len(rejected_items)} rejected articles")
-
-    # Generate rejected summary if there are rejected articles
-    rejected_summary = ""
-    if rejected_items:
-        selected_for_prompt = [
-            {'title': item.title_zh or (item.raw_item.title if item.raw_item else ''), 'score': item.total_score}
-            for item in items[:5]
-        ]
-        print("Generating rejected summary...")
-        rejected_summary = await generate_rejected_summary(selected_for_prompt, rejected_items[:5])
-        print(f"✓ Rejected summary generated")
 
     # Calculate statistics
     category_counts = Counter(item.category for item in items)
@@ -389,12 +383,23 @@ async def run_generator(
 
 """
 
-    # Rejected articles section (被淘汰文章)
-    if rejected_summary:
+    # Rejected articles section (未入选文章表格)
+    if rejected_items:
         content += f"""## 📋 本期未入选
 
-{rejected_summary}
+以下文章评分未达门槛（<{min_score}/30），但可能对特定读者有价值：
 
+| 标题 | 简介 | 评分 |
+|:-----|:-----|:----:|
+"""
+        for item in rejected_items[:15]:
+            title = item['title'][:40] + ('...' if len(item['title']) > 40 else '')
+            url = item['url'] or '#'
+            summary = item['summary'][:80].replace('\n', ' ') + ('...' if len(item['summary']) > 80 else '')
+            score = item['score']
+            content += f"| [{title}]({url}) | {summary} | {score}/30 |\n"
+
+        content += """
 ---
 
 """
