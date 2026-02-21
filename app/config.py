@@ -66,6 +66,10 @@ class Settings(BaseSettings):
     email_smtp_server: Optional[str] = None  # SMTP 服务器（留空自动识别）
     email_smtp_port: int = 465  # SMTP 端口
 
+    # Custom save path (for Obsidian etc.)
+    custom_save_path: Optional[str] = None  # 自定义保存路径（如 Obsidian 目录）
+    custom_save_enabled: bool = False  # 是否启用自定义路径保存
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

@@ -215,6 +215,16 @@
             color: white;
         }
 
+        .btn-secondary {
+            background: var(--bg-input);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+        }
+
         .btn-danger {
             background: var(--danger);
             color: white;
@@ -754,6 +764,32 @@
                         <button class="btn btn-primary" onclick="saveEmailConfig()">保存邮件配置</button>
                         <button class="btn btn-secondary" id="sendTestEmailBtn" type="button" onclick="sendTestEmail()">发送测试邮件</button>
                         <span id="emailStatus" style="font-size: 13px; color: var(--text-muted);"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Custom Save Path Config Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title">📁 自定义保存路径</h3>
+                        <p class="card-desc">将日报同时保存到指定目录（如 Obsidian 知识库）</p>
+                    </div>
+                    <label class="toggle">
+                        <input type="checkbox" id="customSaveEnabled" onchange="toggleCustomSaveSection()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div id="customSaveSection">
+                    <div class="form-group">
+                        <label class="form-label">保存路径</label>
+                        <input type="text" class="form-input" id="customSavePath" placeholder="/Users/xxx/Obsidian/每日简报">
+                        <p class="form-hint">💡 日报会保存为 <code>AI技术日报-YYYY-MM-DD.md</code></p>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 10px; align-items: center;">
+                        <button class="btn btn-primary" onclick="saveCustomSaveConfig()">保存配置</button>
+                        <span id="customSaveStatus" style="font-size: 13px; color: var(--text-muted);"></span>
                     </div>
                 </div>
             </div>
@@ -1519,6 +1555,8 @@
             }
             // Load email config
             await loadEmailConfig();
+            // Load custom save config
+            await loadCustomSaveConfig();
         }
 
         async function saveLlmConfig() {
@@ -1706,6 +1744,56 @@
             } finally {
                 btn.disabled = false;
                 btn.textContent = originalText;
+            }
+        }
+
+        // Custom Save Path Configuration
+        async function loadCustomSaveConfig() {
+            const config = await apiGet('/config');
+            if (config) {
+                const enabled = document.getElementById('customSaveEnabled');
+                enabled.checked = config.custom_save_enabled || false;
+
+                // Pre-fill with user's Obsidian path if empty
+                const pathInput = document.getElementById('customSavePath');
+                const defaultPath = '/Users/xiaxuanzhe/Library/Mobile Documents/iCloud~md~obsidian/Documents/个人知识库/每日简报生成';
+                pathInput.value = config.custom_save_path || defaultPath;
+
+                // Update status
+                const statusEl = document.getElementById('customSaveStatus');
+                if (statusEl && config.custom_save_enabled) {
+                    statusEl.innerHTML = '<span style="color: var(--success);">✓ 已启用</span>';
+                }
+            }
+        }
+
+        function toggleCustomSaveSection() {
+            const enabled = document.getElementById('customSaveEnabled').checked;
+            const statusEl = document.getElementById('customSaveStatus');
+            if (statusEl) {
+                if (enabled) {
+                    statusEl.innerHTML = '<span style="color: var(--success);">✓ 已启用</span>';
+                } else {
+                    statusEl.innerHTML = '';
+                }
+            }
+        }
+
+        async function saveCustomSaveConfig() {
+            const data = {
+                custom_save_enabled: document.getElementById('customSaveEnabled').checked,
+                custom_save_path: document.getElementById('customSavePath').value,
+            };
+
+            const result = await apiPut('/config', data);
+            if (result) {
+                showToast('自定义保存配置已保存');
+                const statusEl = document.getElementById('customSaveStatus');
+                if (data.custom_save_enabled) {
+                    statusEl.innerHTML = '<span style="color: var(--success);">✓ 已启用</span>';
+                }
+            } else {
+                showToast('保存失败', 'error');
             }
         }
 

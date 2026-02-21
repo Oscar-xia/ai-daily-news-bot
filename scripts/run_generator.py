@@ -488,6 +488,19 @@ async def run_generator(
     with open(latest_file, "w", encoding="utf-8") as f:
         f.write(content)
 
+    # Save to custom path if configured (e.g., Obsidian vault)
+    custom_file = None
+    if settings.custom_save_enabled and settings.custom_save_path:
+        try:
+            custom_path = Path(settings.custom_save_path)
+            custom_path.mkdir(parents=True, exist_ok=True)
+            custom_file = custom_path / f"AI技术日报-{date_str}.md"
+            with open(custom_file, "w", encoding="utf-8") as f:
+                f.write(content)
+            print(f"✓ Saved to custom path: {custom_file}")
+        except Exception as e:
+            print(f"✗ Failed to save to custom path: {e}")
+
     # Summary
     print()
     print("=" * 60)
@@ -495,6 +508,8 @@ async def run_generator(
     print("=" * 60)
     print(f"Report file: {output_file}")
     print(f"Latest file: {latest_file}")
+    if custom_file:
+        print(f"Custom path: {custom_file}")
     print(f"Items included: {len(items)}")
     print(f"Report ID: {report.id}")
     print(f"Version: {report.version}")
