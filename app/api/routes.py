@@ -753,6 +753,7 @@ async def send_report_email(
 ):
     """Send a specific report via email."""
     from app.notification.email_sender import send_report, is_email_configured
+    from pathlib import Path
 
     if not is_email_configured():
         raise HTTPException(
@@ -770,7 +771,23 @@ async def send_report_email(
 
     success = send_report(report.content, str(report.report_date))
 
+    # Also save to custom path if enabled
+    custom_save_result = None
+    if settings.custom_save_enabled and settings.custom_save_path:
+        try:
+            custom_path = Path(settings.custom_save_path)
+            custom_path.mkdir(parents=True, exist_ok=True)
+            custom_file = custom_path / f"AI技术日报-{report.report_date}.md"
+            with open(custom_file, "w", encoding="utf-8") as f:
+                f.write(report.content)
+            custom_save_result = str(custom_file)
+        except Exception as e:
+            custom_save_result = f"error: {str(e)}"
+
     if success:
-        return {"success": True, "message": f"Report sent to {settings.email_receiver_list}"}
+        message = f"Report sent to {settings.email_receiver_list}"
+        if custom_save_result and not custom_save_result.startswith("error"):
+            message += f", saved to {custom_save_result}"
+        return {"success": True, "message": message, "custom_save_path": custom_save_result}
     else:
         raise HTTPException(status_code=500, detail="Failed to send report via email")
