@@ -75,6 +75,9 @@ class ConfigUpdate(BaseModel):
     email_receivers: Optional[str] = None
     email_smtp_server: Optional[str] = None
     email_smtp_port: Optional[int] = None
+    # Custom save path config
+    custom_save_enabled: Optional[bool] = None
+    custom_save_path: Optional[str] = None
 
 
 def mask_api_key(key: str) -> str:
@@ -105,6 +108,9 @@ async def get_config():
         "email_smtp_server": settings.email_smtp_server,
         "email_smtp_port": settings.email_smtp_port,
         "email_configured": bool(settings.email_sender and settings.email_password),
+        # Custom save path config
+        "custom_save_enabled": settings.custom_save_enabled,
+        "custom_save_path": settings.custom_save_path,
     }
 
 
